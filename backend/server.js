@@ -609,8 +609,15 @@ app.put('/voucher-payments/:id/reject', authenticateToken, async (req, res) => {
     }
 });
 
-const APP_PORT = 5000;
-app.listen(APP_PORT, '0.0.0.0', () => {
-    console.log(`Menama Backend running on port ${APP_PORT}`);
-    console.log(`Local Access: http://localhost:${APP_PORT}`);
+const PORT = process.env.PORT || 5000;
+
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'ok',
+        message: 'Menama backend running 🚀'
+    });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Menama Backend running on port ${PORT}`);
 });
