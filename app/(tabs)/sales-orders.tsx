@@ -1,37 +1,50 @@
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    Calendar,
-    Clipboard,
-    DollarSign,
-    Eye,
-    Filter,
-    RefreshCcw,
-    User,
-    X,
+  Clipboard,
+  Eye,
+  Filter,
+  RefreshCcw,
+  User,
+  X,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Modal,
-    Platform,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import api from "../../services/api";
+
+// ── Green Theme ────────────
+const G = {
+  dark: "#1B5E3B",
+  mid: "#2E7D32",
+  base: "#388E3C",
+  light: "#C8E6C9",
+  pale: "#E8F5E9",
+  faint: "#F6FFF7",
+  white: "#FFFFFF",
+  offwhite: "#F4F9F5",
+  text: "#1A1A1A",
+  sub: "#6B6B6B",
+  muted: "#9E9E9E",
+  border: "#D8EDD9",
+  red: "#C62828",
+};
 
 export default function SalesOrdersScreen() {
   const { filter } = useLocalSearchParams();
   const router = useRouter();
   const filterStr = typeof filter === "string" ? filter : undefined;
+
   const [orders, setOrders] = useState<any[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,12 +52,13 @@ export default function SalesOrdersScreen() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const [dateFilter, setDateFilter] = useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [webDateInput, setWebDateInput] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<
     "All" | "Ready" | "Approved" | "Rejected"
   >("All");
+
+  // Pagination - 2 cards per page
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 2;
 
   const applyFilter = useCallback(
     (data: any[]) => {
@@ -79,35 +93,11 @@ export default function SalesOrdersScreen() {
         );
       }
 
-      if (dateFilter) {
-        const dateString = dateFilter.toISOString().split("T")[0];
-        filtered = filtered.filter((o) =>
-          `${o.Tr_Date ?? o.Date ?? ""}`.includes(dateString),
-        );
-      }
-
       setFilteredOrders(filtered);
+      setCurrentPage(1);
     },
-    [filterStr, searchText, dateFilter, categoryFilter],
+    [filterStr, searchText, categoryFilter],
   );
-
-  const groupSalesOrders = (data: any[]) => {
-    const groups: { [key: string]: any } = {};
-    data.forEach((item) => {
-      const key = item.S_Order;
-      if (!groups[key]) {
-        groups[key] = {
-          ...item,
-          items: [],
-          // Outstanding_Balance is the same for all items in same S_Order from my backend query
-          // but if it's per row, I should sum it? Usually it's per order.
-          displayBalance: item.Outstanding_Balance || 0,
-        };
-      }
-      groups[key].items.push(item);
-    });
-    return Object.values(groups);
-  };
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -122,9 +112,7 @@ export default function SalesOrdersScreen() {
     }
   }, [applyFilter]);
 
-  useEffect(() => {
-    applyFilter(orders);
-  }, [orders, applyFilter]);
+  useEffect(() => applyFilter(orders), [orders, applyFilter]);
 
   useFocusEffect(
     useCallback(() => {
@@ -132,77 +120,98 @@ export default function SalesOrdersScreen() {
     }, [fetchOrders]),
   );
 
-  const onDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === "ios");
-    if (selectedDate) {
-      setDateFilter(selectedDate);
-    }
-  };
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+  const pagedOrders = filteredOrders.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
 
-  const handleWebDateFilter = () => {
-    if (webDateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      const [year, month, day] = webDateInput.split("-").map(Number);
-      setDateFilter(new Date(year, month - 1, day));
-      setShowDatePicker(false);
-    } else if (!webDateInput) {
-      setDateFilter(null);
-      setShowDatePicker(false);
-    } else {
-      Alert.alert("Invalid Date", "Please use YYYY-MM-DD format");
-    }
-  };
-
-  const getTotalOutstanding = () => {
-    // Grouped unique balances to avoid over-counting if same order shows multiple times in list
-    const grouped = groupSalesOrders(filteredOrders);
-    return grouped.reduce(
-      (sum, order) => sum + (Number(order.displayBalance) || 0),
-      0,
-    );
-  };
+  const getTotalOutstanding = () =>
+    filteredOrders.reduce((sum, order) => {
+      const val = parseFloat(order.Rate);
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
 
   const clearAllFilters = () => {
     setSearchText("");
-    setDateFilter(null);
-    setWebDateInput("");
     setCategoryFilter("All");
     router.setParams({ filter: undefined });
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase().trim()) {
+      case "approved":
+        return "#2E7D32"; // Dark Green
+      case "ready":
+        return "#1976D2"; // Blue
+      case "rejected":
+        return "#C62828"; // Red
+      case "pending":
+        return "#EF6C00"; // Orange
+      default:
+        return "#757575"; // Gray
+    }
+  };
+
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.card}>
+      <View style={styles.cardAccent} />
+
       <View style={styles.cardHeader}>
         <Text style={styles.orderNo}>{item.S_Order}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: "#4CD964" }]}>
-          <Text style={styles.statusText}>Active</Text>
+        <View style={styles.statusBadge}>
+          <View
+            style={[
+              styles.statusDot,
+              {
+                backgroundColor: item.Status?.trim() === "A" ? G.mid : G.muted,
+              },
+            ]}
+          />
+          <Text style={styles.statusText}>
+            {item.Status?.trim() === "A" ? "Available" : item.Status}
+          </Text>
         </View>
       </View>
 
       <View style={styles.cardBody}>
         <View style={styles.infoRow}>
-          <User size={16} color="#666" />
-          <Text style={styles.infoText}>{item.Customer_Name}</Text>
+          <User size={18} color={G.sub} />
+          <Text style={styles.customerName}>{item.Customer_Name}</Text>
         </View>
 
         <View style={styles.productsList}>
-          {item.items.map((it: any, idx: number) => (
-            <View key={idx} style={styles.productRowInline}>
-              <Clipboard size={14} color="#8E8E93" />
-              <Text style={styles.productItemText}>{it.Product_Name}</Text>
-            </View>
-          ))}
+          <View style={styles.productRow}>
+            <Clipboard size={16} color={G.mid} />
+            <Text
+              style={[styles.productText, { fontWeight: "700", color: G.text }]}
+            >
+              {item.Product_Name}
+            </Text>
+          </View>
         </View>
 
-        <View style={styles.balanceInfo}>
-          <DollarSign size={16} color="#FF3B30" />
-          <Text style={styles.balanceText}>
-            Order Balance: Rs. {Number(item.displayBalance).toLocaleString()}
-          </Text>
+        <View style={styles.balanceBox}>
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Text style={styles.balanceText}>
+              Rs. {Number(item.Outstanding_Balance).toLocaleString()}
+            </Text>
+            <Text style={{ fontSize: 13, color: G.text, fontWeight: "600" }}>
+              Order Balance
+            </Text>
+          </View>
         </View>
 
         <View style={styles.statusRow}>
-          <View style={styles.statusContainer}>
-            <Text style={styles.statusLabel}>Costing:</Text>
+          <View style={styles.statusCol}>
+            <Text style={styles.statusLabel}>Costing</Text>
             <Text
               style={[
                 styles.statusValue,
@@ -212,8 +221,8 @@ export default function SalesOrdersScreen() {
               {item.Costing_Status || "Pending"}
             </Text>
           </View>
-          <View style={styles.statusContainer}>
-            <Text style={styles.statusLabel}>Quotation:</Text>
+          <View style={styles.statusCol}>
+            <Text style={styles.statusLabel}>Quotation</Text>
             <Text
               style={[
                 styles.statusValue,
@@ -233,92 +242,64 @@ export default function SalesOrdersScreen() {
           setModalVisible(true);
         }}
       >
-        <Eye size={18} color="#007AFF" />
-        <Text style={styles.viewButtonText}>View Order Details</Text>
+        <Eye size={18} color={G.white} />
+        <Text style={styles.viewButtonText}>View Details</Text>
       </TouchableOpacity>
     </View>
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase().trim()) {
-      case "approved":
-        return "#4CD964";
-      case "ready":
-        return "#FF9500";
-      case "pending":
-        return "#8E8E93";
-      case "rejected":
-        return "#FF3B30";
-      default:
-        return "#8E8E93";
-    }
-  };
+  const hasAnyFilter = searchText || filterStr || categoryFilter !== "All";
 
   if (loading && !refreshing) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={G.dark} />
       </View>
     );
   }
 
-  const hasAnyFilter = searchText || dateFilter || filterStr;
-
   return (
     <View style={styles.container}>
+      {/* Header Banner */}
       <View style={styles.filterBanner}>
         <View style={styles.bannerInfo}>
-          <Filter size={20} color="#007AFF" />
+          <Filter size={22} color={G.dark} />
           <View style={styles.bannerTextCol}>
             <Text style={styles.bannerTitle}>
               {filterStr
-                ? `${filterStr.charAt(0).toUpperCase() + filterStr.slice(1)} Ready`
-                : "Showing All Active Orders"}
+                ? `${filterStr.charAt(0).toUpperCase() + filterStr.slice(1)} Orders`
+                : "Sales Orders"}
             </Text>
             <Text style={styles.bannerSubtitle}>
-              {filteredOrders.length}{" "}
-              {filteredOrders.length === 1 ? "order" : "orders"} found
+              {filteredOrders.length} orders • Page {currentPage} of{" "}
+              {totalPages}
             </Text>
           </View>
         </View>
         {hasAnyFilter && (
-          <TouchableOpacity style={styles.showAllBtn} onPress={clearAllFilters}>
-            <RefreshCcw size={16} color="white" />
-            <Text style={styles.showAllBtnText}>Show All</Text>
+          <TouchableOpacity style={styles.clearBtn} onPress={clearAllFilters}>
+            <RefreshCcw size={16} color={G.white} />
           </TouchableOpacity>
         )}
       </View>
 
+      {/* Total Outstanding */}
       <View style={styles.totalSummary}>
-        <Text style={styles.totalLabel}>Total Outstanding (Filtered):</Text>
+        <Text style={styles.totalLabel}>Total Outstanding</Text>
         <Text style={styles.totalValue}>
           Rs. {getTotalOutstanding().toLocaleString()}
         </Text>
       </View>
 
+      {/* Search & Category */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search order, customer or product"
-            value={searchText}
-            onChangeText={setSearchText}
-          />
-        </View>
-
-        <View style={styles.filtersRow}>
-          <TouchableOpacity
-            style={styles.datePickerButton}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Calendar size={18} color="#007AFF" />
-            <Text style={styles.dateText}>
-              {dateFilter
-                ? `Date Filter: ${dateFilter.toISOString().split("T")[0]}`
-                : "Select Date to Filter (Calendar)"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by Order No, Customer or Product..."
+          placeholderTextColor={G.muted}
+          value={searchText}
+          onChangeText={setSearchText}
+        />
 
         <View style={styles.categoryRow}>
           {["All", "Ready", "Approved", "Rejected"].map((cat) => (
@@ -343,116 +324,158 @@ export default function SalesOrdersScreen() {
         </View>
       </View>
 
-      {showDatePicker && Platform.OS !== "web" && (
-        <DateTimePicker
-          value={dateFilter || new Date()}
-          mode="date"
-          display="default"
-          onChange={onDateChange}
-        />
-      )}
-
-      {/* Web Date Picker Fallback */}
-      <Modal
-        transparent
-        visible={showDatePicker && Platform.OS === "web"}
-        animationType="fade"
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.webDatePickerContent}>
-            <Text style={styles.modalTitle}>Set Date Filter</Text>
-            <TextInput
-              style={styles.webDateInput}
-              placeholder="YYYY-MM-DD"
-              value={webDateInput}
-              onChangeText={setWebDateInput}
-              autoFocus
-            />
-            <View style={styles.modalActionRow}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.modalBtnCancel]}
-                onPress={() => setShowDatePicker(false)}
-              >
-                <Text style={styles.modalBtnTextRow}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.modalBtnApply]}
-                onPress={handleWebDateFilter}
-              >
-                <Text style={[styles.modalBtnTextRow, { color: "white" }]}>
-                  Apply
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
       <FlatList
-        data={groupSalesOrders(filteredOrders)}
+        data={pagedOrders}
         renderItem={renderItem}
-        keyExtractor={(item) => item.S_Order}
+        keyExtractor={(item, index) => `${item.S_Order}-${index}`}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              fetchOrders();
-            }}
+            colors={[G.dark]}
+            onRefresh={fetchOrders}
           />
         }
-        contentContainerStyle={{ padding: 15 }}
+        contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No matching orders found</Text>
-            {hasAnyFilter && (
-              <TouchableOpacity
-                onPress={clearAllFilters}
-                style={styles.resetBtn}
-              >
-                <Text style={styles.resetBtnText}>Clear All Filters</Text>
-              </TouchableOpacity>
-            )}
+            <Text style={styles.emptyText}>No orders found</Text>
           </View>
+        }
+        ListFooterComponent={
+          totalPages > 1 ? (
+            <View style={styles.paginationControls}>
+              <TouchableOpacity
+                disabled={currentPage === 1}
+                onPress={() => setCurrentPage((p) => p - 1)}
+                style={[
+                  styles.pageButton,
+                  currentPage === 1 && styles.pageButtonDisabled,
+                ]}
+              >
+                <Text style={styles.pageButtonText}>← Previous</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.paginationText}>
+                {currentPage} / {totalPages}
+              </Text>
+
+              <TouchableOpacity
+                disabled={currentPage === totalPages}
+                onPress={() => setCurrentPage((p) => p + 1)}
+                style={[
+                  styles.pageButton,
+                  currentPage === totalPages && styles.pageButtonDisabled,
+                ]}
+              >
+                <Text style={styles.pageButtonText}>Next →</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null
         }
       />
 
+      {/* Modal */}
       <Modal
         animationType="slide"
-        transparent={true}
+        transparent
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitleDetail}>
-                Order Details: {selectedOrder?.S_Order}
-              </Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <X size={24} color="#333" />
-              </TouchableOpacity>
+            <View style={styles.modalGreenHeader}>
+              <View style={styles.modalHeaderRow}>
+                <Text style={styles.modalTitle}>
+                  Order: {selectedOrder?.S_Order}
+                </Text>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <X size={24} color={G.white} />
+                </TouchableOpacity>
+              </View>
             </View>
+
             <ScrollView style={styles.modalScroll}>
               <View style={styles.detailSection}>
-                <Text style={styles.detailLabel}>Product:</Text>
-                <Text style={styles.detailValue}>
-                  {selectedOrder?.Product_Name}
-                </Text>
-                <Text style={styles.detailLabel}>Customer:</Text>
+                <Text style={styles.detailLabel}>S_ORDER</Text>
+                <Text style={styles.detailValue}>{selectedOrder?.S_Order}</Text>
+
+                <Text style={styles.detailLabel}>CUSTOMER NAME</Text>
                 <Text style={styles.detailValue}>
                   {selectedOrder?.Customer_Name}
                 </Text>
-                <Text style={styles.detailLabel}>Rate:</Text>
-                <Text style={[styles.detailValue, { color: "#FF3B30" }]}>
-                  Rs. {selectedOrder?.Rate?.toLocaleString()}
-                </Text>
-                <Text style={styles.detailLabel}>Date:</Text>
+
+                <Text style={styles.detailLabel}>PRODUCT NAME</Text>
                 <Text style={styles.detailValue}>
-                  {selectedOrder
-                    ? new Date(selectedOrder.Tr_Date).toLocaleDateString()
-                    : ""}
+                  {selectedOrder?.Product_Name}
                 </Text>
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.detailLabel}>RATE</Text>
+                    <Text style={[styles.detailValue, { color: G.red }]}>
+                      Rs. {selectedOrder?.Rate?.toLocaleString()}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.detailLabel}>DATE</Text>
+                    <Text style={styles.detailValue}>
+                      {selectedOrder?.Tr_Date
+                        ? new Date(selectedOrder.Tr_Date).toLocaleDateString()
+                        : "N/A"}
+                    </Text>
+                  </View>
+                </View>
+
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: G.border,
+                    marginVertical: 20,
+                  }}
+                />
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.detailLabel}>COSTING </Text>
+                    <Text
+                      style={[
+                        styles.detailValue,
+                        {
+                          color: getStatusColor(selectedOrder?.Costing_Status),
+                        },
+                      ]}
+                    >
+                      {selectedOrder?.Costing_Status || "Pending"}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.detailLabel}>QUOTATION </Text>
+                    <Text
+                      style={[
+                        styles.detailValue,
+                        {
+                          color: getStatusColor(
+                            selectedOrder?.Quatation_Status,
+                          ),
+                        },
+                      ]}
+                    >
+                      {selectedOrder?.Quatation_Status || "Pending"}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Outstanding balance removed per request */}
               </View>
             </ScrollView>
           </View>
@@ -462,251 +485,228 @@ export default function SalesOrdersScreen() {
   );
 }
 
+// ── Clean & Neat Styles ─────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F9FA" },
+  container: { flex: 1, backgroundColor: G.offwhite },
+
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+
   filterBanner: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "white",
+    backgroundColor: G.white,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: G.border,
   },
   bannerInfo: { flexDirection: "row", alignItems: "center", flex: 1 },
   bannerTextCol: { marginLeft: 12 },
-  bannerTitle: { fontSize: 16, fontWeight: "bold", color: "#1A1A1A" },
-  bannerSubtitle: { fontSize: 12, color: "#666", marginTop: 2 },
-  showAllBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-  },
-  showAllBtnText: { color: "white", fontWeight: "bold", fontSize: 13 },
-  totalSummary: {
-    padding: 15,
-    backgroundColor: "#FFF5F5",
-    margin: 15,
-    borderRadius: 15,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#FFEBEB",
-  },
-  totalLabel: { fontSize: 12, color: "#888", fontWeight: "600" },
-  totalValue: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#FF3B30",
-    marginTop: 4,
-  },
-  searchContainer: { padding: 15, paddingTop: 0 },
-  searchBar: { marginBottom: 10 },
-  searchInput: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E1E1E6",
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: "#333",
-  },
-  filtersRow: { flexDirection: "row" },
-  datePickerButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#007AFF",
-    paddingHorizontal: 15,
-    height: 48,
-  },
-  dateText: {
-    marginLeft: 10,
-    fontSize: 14,
-    color: "#007AFF",
-    fontWeight: "600",
-  },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    marginBottom: 15,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: "#eee",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  orderNo: { fontWeight: "bold", color: "#007AFF", fontSize: 15 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-  statusText: { color: "white", fontSize: 11, fontWeight: "bold" },
-  cardBody: { marginBottom: 10 },
-  infoRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  infoText: { marginLeft: 10, color: "#444", fontSize: 14 },
-  productsList: {
-    backgroundColor: "#F8F9FA",
+  bannerTitle: { fontSize: 18, fontWeight: "700", color: G.text },
+  bannerSubtitle: { fontSize: 13, color: G.sub },
+
+  clearBtn: {
+    backgroundColor: G.dark,
     padding: 10,
-    borderRadius: 10,
-    marginVertical: 10,
+    borderRadius: 20,
   },
-  productRowInline: {
-    flexDirection: "row",
+
+  totalSummary: {
+    margin: 16,
+    padding: 18,
+    backgroundColor: G.pale,
+    borderRadius: 16,
     alignItems: "center",
-    marginVertical: 2,
-    gap: 8,
+    borderWidth: 1,
+    borderColor: G.light,
   },
-  productItemText: {
-    fontSize: 13,
-    color: "#666",
-    fontWeight: "500",
+  totalLabel: { fontSize: 13, color: G.sub, fontWeight: "600" },
+  totalValue: { fontSize: 28, fontWeight: "700", color: G.dark, marginTop: 4 },
+
+  searchContainer: { paddingHorizontal: 16, paddingBottom: 12 },
+  searchInput: {
+    backgroundColor: G.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: G.border,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: G.text,
   },
-  balanceInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFF5F5",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 12,
-  },
-  balanceText: {
-    marginLeft: 8,
-    fontWeight: "bold",
-    color: "#FF3B30",
-    fontSize: 16,
-  },
-  statusRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 5,
-    backgroundColor: "#F8F9FA",
-    padding: 12,
-    borderRadius: 10,
-  },
-  statusContainer: { alignItems: "center" },
-  statusLabel: { fontSize: 11, color: "#888", marginBottom: 2 },
-  statusValue: { fontSize: 13, fontWeight: "bold" },
-  viewButton: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
-    marginTop: 8,
-  },
-  viewButtonText: { color: "#007AFF", marginLeft: 8, fontWeight: "700" },
+
   categoryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 15,
+    marginTop: 12,
   },
   categoryChip: {
-    paddingHorizontal: 12,
     paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: G.white,
     borderWidth: 1,
-    borderColor: "#ddd",
-    flex: 0.23,
+    borderColor: G.border,
+    flex: 1,
+    marginHorizontal: 4,
     alignItems: "center",
   },
-  categoryChipActive: { backgroundColor: "#007AFF", borderColor: "#007AFF" },
-  categoryChipText: { fontSize: 11, fontWeight: "bold", color: "#666" },
-  categoryChipTextActive: { color: "white" },
-  emptyContainer: { alignItems: "center", marginTop: 50 },
-  emptyText: { color: "#999", fontSize: 16 },
-  resetBtn: { marginTop: 15, padding: 10 },
-  resetBtnText: { color: "#007AFF", fontWeight: "bold" },
+  categoryChipActive: { backgroundColor: G.dark, borderColor: G.dark },
+  categoryChipText: { fontSize: 12.5, fontWeight: "600", color: G.sub },
+  categoryChipTextActive: { color: G.white },
+
+  listContent: { padding: 16, paddingBottom: 100 },
+
+  card: {
+    backgroundColor: G.white,
+    borderRadius: 20,
+    marginBottom: 18,
+    overflow: "hidden",
+    borderWidth: 1.5,
+    borderColor: G.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  cardAccent: { height: 6, backgroundColor: G.dark },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 18,
+    paddingBottom: 12,
+  },
+  orderNo: { fontSize: 17, fontWeight: "700", color: G.text },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: G.pale,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  statusDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: G.base },
+  statusText: { color: G.dark, fontSize: 11, fontWeight: "700" },
+
+  cardBody: { paddingHorizontal: 18, paddingBottom: 10 },
+  infoRow: { flexDirection: "row", alignItems: "center", marginBottom: 14 },
+  customerName: {
+    marginLeft: 12,
+    fontSize: 15,
+    color: G.text,
+    fontWeight: "600",
+  },
+
+  productsList: { marginBottom: 14 },
+  productRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginVertical: 4,
+  },
+  productText: { fontSize: 14, color: G.sub },
+  moreText: { fontSize: 13, color: G.muted, marginTop: 4, fontStyle: "italic" },
+
+  balanceBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: G.pale,
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 14,
+  },
+  balanceText: {
+    marginLeft: 12,
+    fontSize: 17,
+    fontWeight: "700",
+    color: G.red,
+  },
+
+  statusRow: { flexDirection: "row", justifyContent: "space-between" },
+  statusCol: { alignItems: "center" },
+  statusLabel: {
+    fontSize: 14,
+    color: G.sub,
+    marginBottom: 4,
+    fontWeight: "800",
+  },
+  statusValue: { fontSize: 15, fontWeight: "800" },
+
+  viewButton: {
+    backgroundColor: G.dark,
+    margin: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  viewButtonText: { color: G.white, fontWeight: "700", fontSize: 15 },
+
+  // Pagination
+  paginationControls: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
+    paddingVertical: 10,
+  },
+  paginationText: { fontSize: 15, color: G.sub, fontWeight: "600" },
+  pageButton: {
+    backgroundColor: G.dark,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+    borderRadius: 12,
+  },
+  pageButtonDisabled: { backgroundColor: G.light },
+  pageButtonText: { color: G.white, fontWeight: "600", fontSize: 14 },
+
+  emptyContainer: { alignItems: "center", marginTop: 100 },
+  emptyText: { color: G.muted, fontSize: 16 },
+
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
-    padding: 20,
+    padding: 24,
   },
-  webDatePickerContent: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 25,
-    shadowColor: "#000",
-    shadowRadius: 10,
-    shadowOpacity: 0.2,
-  },
-  webDateInput: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 18,
-    marginVertical: 20,
-    textAlign: "center",
-  },
-  modalActionRow: { flexDirection: "row", justifyContent: "flex-end", gap: 15 },
-  modalBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
-  modalBtnCancel: { backgroundColor: "#f0f0f0" },
-  modalBtnApply: { backgroundColor: "#007AFF" },
-  modalBtnTextRow: { fontWeight: "bold" },
   modalContent: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    height: "75%",
-    padding: 25,
-    marginTop: "auto",
+    backgroundColor: G.white,
+    borderRadius: 24,
+    maxHeight: "85%",
+    overflow: "hidden",
   },
-  modalHeader: {
+  modalGreenHeader: { backgroundColor: G.dark, padding: 20 },
+  modalHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 25,
+    alignItems: "center",
   },
-  modalTitleDetail: { fontSize: 18, fontWeight: "bold", color: "#1A1A1A" },
-  modalTitle: { fontSize: 18, fontWeight: "bold", textAlign: "center" },
-  modalScroll: { flex: 1 },
+  modalTitle: { fontSize: 19, fontWeight: "700", color: G.white },
+  modalScroll: { padding: 20 },
   detailSection: {
-    backgroundColor: "#F8F9FA",
-    padding: 18,
-    borderRadius: 20,
-    marginBottom: 25,
+    backgroundColor: G.faint,
+    padding: 20,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: G.border,
   },
   detailLabel: {
-    fontSize: 11,
-    color: "#888",
-    marginTop: 12,
+    fontSize: 13.5,
+    color: G.mid,
+    fontWeight: "700",
+    marginTop: 16,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
-  detailValue: { fontSize: 16, fontWeight: "600", color: "#333", marginTop: 2 },
-  actionSection: { marginBottom: 30 },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 15,
-    color: "#1A1A1A",
+  detailValue: {
+    fontSize: 16.5,
+    fontWeight: "700",
+    color: G.text,
+    marginTop: 4,
   },
-  actionButtons: { flexDirection: "row", justifyContent: "space-between" },
-  btn: {
-    flex: 0.48,
-    height: 48,
-    borderRadius: 12,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  btnApprove: { backgroundColor: "#4CD964" },
-  btnReject: { backgroundColor: "#FF3B30" },
-  btnText: { color: "white", fontWeight: "bold" },
 });
