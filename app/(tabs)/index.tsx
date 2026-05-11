@@ -996,7 +996,7 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 19,
     fontWeight: "500",
-    color: "#8E8E93",
+    color: "#8e9390",
   },
   usernameText: {
     fontSize: 22,
