@@ -1,15 +1,12 @@
-import axios from 'axios';
+import { create } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // BASE_URL for the backend API
 // according to the network u connected, url neet to be change while backend
-const BASE_URL = 'https://august-azimuthal-semiclerically.ngrok-free.dev';
+const BASE_URL = 'https://menama.up.railway.app';
 
-const api = axios.create({
+const api = create({
   baseURL: BASE_URL,
-  headers: {
-    'ngrok-skip-browser-warning': 'true'
-  }
 });
 
 api.interceptors.request.use(async (config) => {
