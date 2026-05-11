@@ -7,9 +7,11 @@ import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { FileText, HandCoins, HardHat, LayoutDashboard, TrendingUp } from 'lucide-react-native';
+import { useBadges } from '../../context/BadgeContext';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { counts } = useBadges();
 
   return (
     <Tabs
@@ -45,6 +47,8 @@ export default function TabLayout() {
         options={{
           title: 'Quotations',
           tabBarIcon: ({ color }) => <FileText size={24} color={color} />,
+          tabBarBadge: counts.quotations > 0 ? counts.quotations : undefined,
+          tabBarBadgeStyle: { backgroundColor: '#FF3B30' },
         }}
       />
       <Tabs.Screen
@@ -52,6 +56,8 @@ export default function TabLayout() {
         options={{
           title: 'Costings',
           tabBarIcon: ({ color }) => <HardHat size={24} color={color} />,
+          tabBarBadge: counts.costings > 0 ? counts.costings : undefined,
+          tabBarBadgeStyle: { backgroundColor: '#FF3B30' },
         }}
       />
       <Tabs.Screen
@@ -59,6 +65,8 @@ export default function TabLayout() {
         options={{
           title: 'All Payments',
           tabBarIcon: ({ color }) => <HandCoins size={24} color={color} />,
+          tabBarBadge: counts.totalPayments > 0 ? counts.totalPayments : undefined,
+          tabBarBadgeStyle: { backgroundColor: '#FF3B30' },
         }}
       />
     </Tabs>

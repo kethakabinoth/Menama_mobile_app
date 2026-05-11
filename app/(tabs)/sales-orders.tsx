@@ -22,6 +22,23 @@ import {
   View,
 } from "react-native";
 import api from "../../services/api";
+import { useBadges } from "../../context/BadgeContext";
+import { socket, SOCKET_EVENTS } from "../../services/socket";
+
+const getTimeAgo = (date: string | Date) => {
+  if (!date) return "";
+  const now = new Date();
+  const past = new Date(date);
+  const diffInMs = now.getTime() - past.getTime();
+  const diffInMins = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMins / 60);
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  if (diffInMins < 1) return "Just now";
+  if (diffInMins < 60) return `${diffInMins}m ago`;
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  return `${diffInDays}d ago`;
+};
 
 // ── Green Theme ────────────
 const G = {
@@ -42,6 +59,7 @@ const G = {
 
 export default function SalesOrdersScreen() {
   const { filter } = useLocalSearchParams();
+  const { refreshCounts } = useBadges();
   const router = useRouter();
   const filterStr = typeof filter === "string" ? filter : undefined;
 
@@ -120,6 +138,14 @@ export default function SalesOrdersScreen() {
     }, [fetchOrders]),
   );
 
+  useEffect(() => {
+    socket.on(SOCKET_EVENTS.DATA_UPDATED, () => {
+      fetchOrders();
+      refreshCounts();
+    });
+    return () => { socket.off(SOCKET_EVENTS.DATA_UPDATED); };
+  }, [fetchOrders, refreshCounts]);
+
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
   const pagedOrders = filteredOrders.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -158,7 +184,10 @@ export default function SalesOrdersScreen() {
       <View style={styles.cardAccent} />
 
       <View style={styles.cardHeader}>
-        <Text style={styles.orderNo}>{item.S_Order}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.orderNo}>{item.S_Order}</Text>
+          <Text style={styles.timeAgoText}>{getTimeAgo(item.Tr_Date)}</Text>
+        </View>
         <View style={styles.statusBadge}>
           <View
             style={[
@@ -485,7 +514,7 @@ export default function SalesOrdersScreen() {
   );
 }
 
-// ── Clean & Neat Styles ─────────────────────────────────
+//css
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: G.offwhite },
 
@@ -645,7 +674,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
-  viewButtonText: { color: G.white, fontWeight: "700", fontSize: 15 },
+  viewButtonText: {
+    color: G.white,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  timeAgoText: {
+    fontSize: 11,
+    color: G.red,
+    fontWeight: "600",
+    marginTop: 2,
+  },
 
   // Pagination
   paginationControls: {

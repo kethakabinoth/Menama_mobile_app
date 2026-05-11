@@ -12,6 +12,8 @@ import {
   X,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
+import { useBadges } from "../../context/BadgeContext";
+import { socket, SOCKET_EVENTS } from "../../services/socket";
 import {
   ActivityIndicator,
   Alert,
@@ -47,8 +49,24 @@ const G = {
   redBorder: "#FFCDD2",
 };
 
+const getTimeAgo = (date: string | Date) => {
+  if (!date) return "";
+  const now = new Date();
+  const past = new Date(date);
+  const diffInMs = now.getTime() - past.getTime();
+  const diffInMins = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMins / 60);
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  if (diffInMins < 1) return "Just now";
+  if (diffInMins < 60) return `${diffInMins}m ago`;
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  return `${diffInDays}d ago`;
+};
+
 export default function QuotationsScreen() {
   const router = useRouter();
+  const { refreshCounts } = useBadges();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -123,6 +141,13 @@ export default function QuotationsScreen() {
     }, [fetchQuotations]),
   );
 
+  useEffect(() => {
+    socket.on(SOCKET_EVENTS.DATA_UPDATED, () => {
+      fetchQuotations();
+    });
+    return () => { socket.off(SOCKET_EVENTS.DATA_UPDATED); };
+  }, [fetchQuotations]);
+
   const groupQuotations = (qList: any[]) => {
     const groups: { [key: string]: any } = {};
     qList.forEach((item) => {
@@ -177,6 +202,7 @@ export default function QuotationsScreen() {
       await api.put(`/quotations/${id}/${action}`);
       Alert.alert("Success", `Quotation ${action}ed`);
       await fetchQuotations();
+      await refreshCounts();
       setModalVisible(false);
     } catch {
       Alert.alert("Error", `Failed to ${action} quotation`);
@@ -205,9 +231,14 @@ export default function QuotationsScreen() {
           <Text style={styles.orderNo}>{item.S_Order}</Text>
           <Text style={styles.customerName}>{item.Customer_Name}</Text>
         </View>
-        <View style={styles.readyBadge}>
-          <View style={styles.statusDot} />
-          <Text style={styles.readyBadgeText}>Quotation Ready</Text>
+        <View style={{ alignItems: 'flex-end' }}>
+          <View style={styles.readyBadge}>
+            <View style={styles.statusDot} />
+            <Text style={styles.readyBadgeText}>Quotation Ready</Text>
+          </View>
+          <Text style={styles.timeAgoText}>
+            {item.items[0]?.Tr_Date ? getTimeAgo(item.items[0].Tr_Date) : ""}
+          </Text>
         </View>
       </View>
 
@@ -740,6 +771,12 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   viewButtonText: { color: G.white, fontWeight: "700", fontSize: 13 },
+  timeAgoText: {
+    fontSize: 10,
+    color: G.red,
+    fontWeight: "600",
+    marginTop: 4,
+  },
 
   emptyContainer: { alignItems: "center", marginTop: 80 },
   emptyIcon: {

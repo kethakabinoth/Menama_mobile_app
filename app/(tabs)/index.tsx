@@ -14,7 +14,9 @@ import {
   User,
   X
 } from "lucide-react-native";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useBadges } from "../../context/BadgeContext";
+import { socket, SOCKET_EVENTS } from "../../services/socket";
 import {
   ActivityIndicator,
   Alert,
@@ -29,17 +31,19 @@ import {
 import api from "../../services/api";
 
 export default function DashboardScreen() {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { dashboardData, loading: badgeLoading, refreshCounts } = useBadges();
   const [username, setUsername] = useState("");
   const [historyPage, setHistoryPage] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [customerFilter, setCustomerFilter] = useState("All Customers");
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedOutstanding, setSelectedOutstanding] = useState<any>(null);
-  const ITEMS_PER_PAGE = 5;
+  const [refreshing, setRefreshing] = useState(false);
+  const ITEMS_PER_PAGE = 3;
   const router = useRouter();
+
+  const data = dashboardData;
+  const loading = badgeLoading;
 
   const computeOutstanding = useCallback((dashboardData: any) => {
     const allItems = [
@@ -71,17 +75,15 @@ export default function DashboardScreen() {
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await api.get("/dashboard");
-      setData(response.data);
+      await refreshCounts();
       const storedUser = await SecureStore.getItemAsync("username");
       if (storedUser) setUsername(storedUser);
     } catch (error: any) {
       console.error("Dashboard Fetch Error:", error);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [refreshCounts]);
 
   // Refresh data
   useFocusEffect(
@@ -89,6 +91,25 @@ export default function DashboardScreen() {
       fetchData();
     }, [fetchData]),
   );
+
+  useEffect(() => {
+    socket.on(SOCKET_EVENTS.DATA_UPDATED, () => {
+      console.log("Real-time update received! Refreshing dashboard...");
+      fetchData();
+    });
+
+    return () => {
+      socket.off(SOCKET_EVENTS.DATA_UPDATED);
+    };
+  }, [fetchData]);
+
+  useEffect(() => {
+    const loadUser = async () => {
+        const storedUser = await SecureStore.getItemAsync("username");
+        if (storedUser) setUsername(storedUser);
+    };
+    loadUser();
+  }, []);
 
   const handleLogout = async () => {
     Alert.alert("Logout", "Are you sure you want to logout?⚠️🔒", [
@@ -245,6 +266,7 @@ export default function DashboardScreen() {
             <View style={[styles.iconCircle, { backgroundColor: "#5856D6" }]}>
               <ClipboardList size={20} color="white" />
             </View>
+
             <Text style={styles.subCardValue}>{summary.ReadyQuotations}</Text>
             <Text style={styles.subCardLabel}>Open Quotation</Text>
           </TouchableOpacity>
@@ -1089,12 +1111,30 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 15,
     width: "48%",
-    alignItems: "center",
+    elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    position: 'relative',
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    zIndex: 1,
+  },
+  iconBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   iconCircle: {
     width: 40,

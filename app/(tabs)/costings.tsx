@@ -12,6 +12,8 @@ import {
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
+import { useBadges } from "../../context/BadgeContext";
+import { socket, SOCKET_EVENTS } from "../../services/socket";
 import {
   ActivityIndicator,
   Alert,
@@ -47,8 +49,24 @@ const G = {
   redBorder:"#FFCDD2",
 };
 
+const getTimeAgo = (date: string | Date) => {
+  if (!date) return "";
+  const now = new Date();
+  const past = new Date(date);
+  const diffInMs = now.getTime() - past.getTime();
+  const diffInMins = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMins / 60);
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  if (diffInMins < 1) return "Just now";
+  if (diffInMins < 60) return `${diffInMins}m ago`;
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  return `${diffInDays}d ago`;
+};
+
 export default function CostingsScreen() {
   const router = useRouter();
+  const { refreshCounts } = useBadges();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -110,6 +128,13 @@ export default function CostingsScreen() {
   useEffect(() => { applyFilter(orders); }, [orders, applyFilter]);
   useFocusEffect(useCallback(() => { fetchCostings(); }, [fetchCostings]));
 
+  useEffect(() => {
+    socket.on(SOCKET_EVENTS.DATA_UPDATED, () => {
+      fetchCostings();
+    });
+    return () => { socket.off(SOCKET_EVENTS.DATA_UPDATED); };
+  }, [fetchCostings]);
+
   const groupOrders = (oList: any[]) => {
     const groups: { [key: string]: any } = {};
     oList.forEach((item) => {
@@ -164,6 +189,7 @@ export default function CostingsScreen() {
       await api.put(`/costings/${id}/${action}`);
       Alert.alert("Success", `Costing ${action}ed`);
       await fetchCostings();
+      await refreshCounts();
       setModalVisible(false);
     } catch {
       Alert.alert("Error", `Failed to ${action} costing`);
@@ -183,9 +209,14 @@ export default function CostingsScreen() {
           <Text style={styles.orderNo}>{item.S_Order}</Text>
           <Text style={styles.itemNameBold}>{item.Item_Name}</Text>
         </View>
-        <View style={styles.costingReadyBadge}>
-          <View style={styles.statusDot} />
-          <Text style={styles.costingReadyText}>Costing Ready</Text>
+        <View style={{ alignItems: 'flex-end' }}>
+          <View style={styles.costingReadyBadge}>
+            <View style={styles.statusDot} />
+            <Text style={styles.costingReadyText}>Costing Ready</Text>
+          </View>
+          <Text style={styles.timeAgoText}>
+            {item.materials[0]?.Tr_Date ? getTimeAgo(item.materials[0].Tr_Date) : ""}
+          </Text>
         </View>
       </View>
 
@@ -597,6 +628,12 @@ const styles = StyleSheet.create({
     paddingVertical: 11, borderRadius: 12, gap: 7,
   },
   viewButtonText: { color: G.white, fontWeight: "700", fontSize: 13 },
+  timeAgoText: {
+    fontSize: 10,
+    color: G.muted,
+    fontWeight: "600",
+    marginTop: 4,
+  },
 
   emptyContainer: { alignItems: "center", marginTop: 80 },
   emptyIcon: {

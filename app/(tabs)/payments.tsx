@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
+import { useBadges } from "../../context/BadgeContext";
 import {
   ActivityIndicator,
   Alert,
@@ -54,8 +55,24 @@ const G = {
   orange: "#e3a70f",
 };
 
+const getTimeAgo = (date: string | Date) => {
+  if (!date) return "";
+  const now = new Date();
+  const past = new Date(date);
+  const diffInMs = now.getTime() - past.getTime();
+  const diffInMins = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMins / 60);
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  if (diffInMins < 1) return "Just now";
+  if (diffInMins < 60) return `${diffInMins}m ago`;
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  return `${diffInDays}d ago`;
+};
+
 export default function AllPaymentsScreen() {
   const router = useRouter();
+  const { refreshCounts } = useBadges();
   const { tab } = useLocalSearchParams<{ tab: string }>();
 
   const [payments, setPayments] = useState<any[]>([]);
@@ -174,6 +191,7 @@ export default function AllPaymentsScreen() {
       await api.put(endpoint);
       Alert.alert("Success", `${activeTab} payment ${action}ed successfully`);
       await fetchPayments();
+      await refreshCounts();
       setModalVisible(false);
     } catch (error) {
       console.error("Action Error:", error);
@@ -244,9 +262,12 @@ export default function AllPaymentsScreen() {
               {item.Supplier_Name || item.Technician_Name || item.Acc_Name}
             </Text>
           </View>
-          <View style={styles.statusBadge}>
-            <View style={styles.statusDot} />
-            <Text style={styles.statusText}>READY</Text>
+          <View style={{ alignItems: "flex-end" }}>
+            <View style={styles.statusBadge}>
+              <View style={styles.statusDot} />
+              <Text style={styles.statusText}>READY</Text>
+            </View>
+            <Text style={styles.timeAgoText}>{getTimeAgo(item.Tr_Date || item.DOR)}</Text>
           </View>
         </View>
 
@@ -778,6 +799,12 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   viewButtonText: { color: G.white, fontWeight: "700", fontSize: 13 },
+  timeAgoText: {
+    fontSize: 10,
+    color: G.red,
+    fontWeight: "600",
+    marginTop: 4,
+  },
 
   // Empty
   emptyContainer: { alignItems: "center", marginTop: 80 },
