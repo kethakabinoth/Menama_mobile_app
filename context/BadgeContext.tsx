@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import api from '../services/api';
 import { socket, SOCKET_EVENTS } from '../services/socket';
+import * as SecureStore from 'expo-secure-store';                   
 
 interface BadgeCounts {
   quotations: number;
@@ -10,7 +11,7 @@ interface BadgeCounts {
   voucherPayments: number;
   totalPayments: number;
 }
-
+;
 interface BadgeContextType {
   counts: BadgeCounts;
   dashboardData: any;
@@ -34,6 +35,9 @@ export function BadgeProvider({ children }: { children: React.ReactNode }) {
 
   const refreshCounts = useCallback(async () => {
     try {
+      const token = await SecureStore.getItemAsync('token');
+      if (!token) return; // Prevent 401 if not logged in
+
       const response = await api.get('/dashboard');
       const data = response.data;
       const summary = data.summary;
