@@ -1,5 +1,5 @@
 import { create } from "axios";
-import * as SecureStore from "expo-secure-store";
+import * as SecureStore from "../utils/storage";
 
 // BASE_URL for the backend API
 // according to the network u connected, url neet to be change while backend

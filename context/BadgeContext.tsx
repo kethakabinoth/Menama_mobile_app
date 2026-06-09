@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import api from '../services/api';
 import { socket, SOCKET_EVENTS } from '../services/socket';
-import * as SecureStore from 'expo-secure-store';                   
+import * as SecureStore from '../utils/storage';                   
 
 interface BadgeCounts {
   quotations: number;

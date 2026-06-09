@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '../utils/storage';
 import api from '../services/api';
 import { LogIn } from 'lucide-react-native';
 
@@ -94,6 +94,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 30,
         alignItems: 'center',
+        ...(Platform.OS === 'web' ? { maxWidth: 450, alignSelf: 'center', width: '100%' } : {}),
     },
     logo: {
         width: 200,

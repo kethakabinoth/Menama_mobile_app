@@ -1,6 +1,6 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
+import * as SecureStore from "../../utils/storage";
 import {
   AlertCircle,
   ChevronRight,
@@ -27,6 +27,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Platform,
 } from "react-native";
 import api from "../../services/api";
 
@@ -994,7 +995,8 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F2F7",
+    backgroundColor: "#F7F8FA",
+    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%' } : {}),
   },
   centered: {
     flex: 1,
