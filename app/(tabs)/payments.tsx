@@ -394,7 +394,7 @@ export default function AllPaymentsScreen() {
           keyExtractor={(item, index) =>
             `${activeTab}-${item.Pay_No || item.Voucher_No || index}`
           }
-          contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: Platform.OS === 'web' ? 30 : 110 }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -632,7 +632,11 @@ export default function AllPaymentsScreen() {
 
 // ── CSS Styles ────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: G.offwhite },
+  container: { 
+    flex: 1, 
+    backgroundColor: G.offwhite,
+    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%' } : {})
+  },
 
   // Header
   header: {
@@ -852,6 +856,7 @@ const styles = StyleSheet.create({
     backgroundColor: G.white,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
+    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%', borderRadius: 28, marginBottom: 20 } : {}),
     maxHeight: "88%",
     overflow: "hidden",
   },

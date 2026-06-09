@@ -367,7 +367,7 @@ export default function CostingsScreen() {
             onRefresh={() => { setRefreshing(true); fetchCostings(); }}
           />
         }
-        contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: Platform.OS === 'web' ? 30 : 110 }}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIcon}>
@@ -498,7 +498,11 @@ export default function CostingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: G.offwhite },
+  container: { 
+    flex: 1, 
+    backgroundColor: G.offwhite,
+    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%' } : {})
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -663,6 +667,7 @@ const styles = StyleSheet.create({
   mainModalContent: {
     backgroundColor: G.white,
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%', borderRadius: 28, marginBottom: 20 } : {}),
     maxHeight: "88%", overflow: "hidden",
   },
 

@@ -8,6 +8,14 @@ import { BadgeProvider } from '../context/BadgeContext';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
+const customTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: '#F7F8FA',
+  },
+};
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const segments = useSegments();
@@ -35,7 +43,7 @@ export default function RootLayout() {
   if (!isReady) return null;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={customTheme}>
       <BadgeProvider>
         <Stack>
           <Stack.Screen name="login" options={{ headerShown: false }} />

@@ -20,6 +20,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Platform,
 } from "react-native";
 import api from "../../services/api";
 import { useBadges } from "../../context/BadgeContext";
@@ -516,7 +517,11 @@ export default function SalesOrdersScreen() {
 
 //css
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: G.offwhite },
+  container: { 
+    flex: 1, 
+    backgroundColor: G.offwhite,
+    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%' } : {})
+  },
 
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
 
@@ -584,7 +589,7 @@ const styles = StyleSheet.create({
   categoryChipText: { fontSize: 12.5, fontWeight: "600", color: G.sub },
   categoryChipTextActive: { color: G.white },
 
-  listContent: { padding: 16, paddingBottom: 100 },
+  listContent: { padding: 16, paddingBottom: Platform.OS === 'web' ? 30 : 100 },
 
   card: {
     backgroundColor: G.white,
@@ -717,6 +722,7 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: G.white,
     borderRadius: 24,
+    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%', marginBottom: 20 } : {}),
     maxHeight: "85%",
     overflow: "hidden",
   },

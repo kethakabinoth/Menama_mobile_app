@@ -38,6 +38,8 @@ export default function DashboardScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [customerFilter, setCustomerFilter] = useState("All Customers");
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [historyDetailModalVisible, setHistoryDetailModalVisible] = useState(false);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<any>(null);
  
   const [selectedOutstanding, setSelectedOutstanding] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -174,7 +176,7 @@ export default function DashboardScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: 100 }}
+      contentContainerStyle={{ paddingBottom: Platform.OS === 'web' ? 30 : 100 }}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -686,6 +688,7 @@ export default function DashboardScreen() {
                     backgroundColor: "white",
                     borderRadius: 20,
                     overflow: "hidden",
+                    ...(Platform.OS === 'web' ? { maxWidth: 600, alignSelf: 'center', width: '100%' } : {}),
                   }}
                 >
                   <View style={[styles.modalHeader, { padding: 15 }]}>
@@ -893,6 +896,59 @@ export default function DashboardScreen() {
           </View>
         </Modal>
 
+        {/* History Detail Modal */}
+        <Modal visible={historyDetailModalVisible} animationType="fade" transparent>
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 25, zIndex: 1000 }]}>
+            <View style={{ backgroundColor: "white", borderRadius: 20, overflow: "hidden", ...(Platform.OS === 'web' ? { maxWidth: 600, alignSelf: 'center', width: '100%' } : {}) }}>
+              <View style={[styles.modalHeader, { padding: 15 }]}>
+                <Text style={styles.modalTitle}>History Details</Text>
+                <TouchableOpacity onPress={() => setHistoryDetailModalVisible(false)} style={styles.closeBtn}>
+                  <X size={18} color="white" />
+                </TouchableOpacity>
+              </View>
+              {selectedHistoryItem && (
+                <View style={{ padding: 20 }}>
+                  <Text style={{ fontSize: 12, color: "#888", fontWeight: "bold", marginBottom: 5 }}>CUSTOMER NAME</Text>
+                  <Text style={{ fontSize: 18, color: "#333", fontWeight: "bold", marginBottom: 20 }}>{selectedHistoryItem.Customer_Name}</Text>
+                  
+                  <View style={{ flexDirection: "row", marginBottom: 15 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>ORDER NO</Text>
+                      <Text style={{ fontSize: 14, color: "#333", fontWeight: "600" }}>{selectedHistoryItem.S_Order}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>TYPE</Text>
+                      <Text style={{ fontSize: 14, color: "#0ea043", fontWeight: "bold" }}>{selectedHistoryItem.ApprovedType}</Text>
+                    </View>
+                  </View>
+                  
+                  <View style={{ flexDirection: "row", marginBottom: 15 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>PRODUCT</Text>
+                      <Text style={{ fontSize: 14, color: "#333", fontWeight: "600" }}>{selectedHistoryItem.Product_Name || "N/A"}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>DATE</Text>
+                      <Text style={{ fontSize: 14, color: "#333", fontWeight: "600" }}>{new Date(selectedHistoryItem.Tr_Date).toLocaleDateString()}</Text>
+                    </View>
+                  </View>
+
+                  <View style={{ height: 1, backgroundColor: "#EEE", marginVertical: 10 }} />
+                  
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
+                    <Text style={{ fontWeight: "bold", fontSize: 16 }}>Rate</Text>
+                    <Text style={{ fontWeight: "bold", fontSize: 18, color: "#D32F2F" }}>Rs. {selectedHistoryItem.Rate?.toLocaleString()}</Text>
+                  </View>
+                  
+                  <TouchableOpacity style={{ backgroundColor: "#0ea043", padding: 15, borderRadius: 12, alignItems: "center", marginTop: 25 }} onPress={() => setHistoryDetailModalVisible(false)}>
+                    <Text style={{ color: "white", fontWeight: "bold" }}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+        </Modal>
+
         <Text style={styles.sectionTitle}>Approved History</Text>
         {data?.history && data.history.length > 0 ? (
           <>
@@ -906,10 +962,8 @@ export default function DashboardScreen() {
                   key={index}
                   style={styles.historyItem}
                   onPress={() => {
-                    Alert.alert(
-                      "History Detail",
-                      `Order: ${item.S_Order}\nCustomer: ${item.Customer_Name}\nProduct: ${item.Product_Name}\nType: ${item.ApprovedType}\nRate: Rs. ${item.Rate?.toLocaleString()}\nDate: ${new Date(item.Tr_Date).toLocaleDateString()}`,
-                    );
+                    setSelectedHistoryItem(item);
+                    setHistoryDetailModalVisible(true);
                   }}
                 >
                   <View style={styles.historyInfo}>
@@ -1008,7 +1062,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: Platform.OS === 'web' ? 25 : 50,
     paddingBottom: 25,
     backgroundColor: "rgb(255, 255, 255)",
     borderBottomLeftRadius: 60,
@@ -1459,6 +1513,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F8FA",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%', borderRadius: 20, marginBottom: 20 } : {}),
     height: "85%",
   },
   modalHeader: {
