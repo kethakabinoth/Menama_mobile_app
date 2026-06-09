@@ -37,6 +37,7 @@ export default function DashboardScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [customerFilter, setCustomerFilter] = useState("All Customers");
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+ 
   const [selectedOutstanding, setSelectedOutstanding] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
   const ITEMS_PER_PAGE = 3;
@@ -189,7 +190,7 @@ export default function DashboardScreen() {
           <Text style={styles.usernameText}>{username || "User"}</Text>
         </View>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <LogOut size={24} color="#FF3B30" />
+          <LogOut size={28} color="#FF3B30" />
         </TouchableOpacity>
       </View>
 
