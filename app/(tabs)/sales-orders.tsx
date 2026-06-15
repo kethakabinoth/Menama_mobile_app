@@ -1,29 +1,29 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  Clipboard,
-  Eye,
-  Filter,
-  RefreshCcw,
-  User,
-  X,
+    Clipboard,
+    Eye,
+    Filter,
+    RefreshCcw,
+    User,
+    X,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  Modal,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  Platform,
+    ActivityIndicator,
+    FlatList,
+    Modal,
+    Platform,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import api from "../../services/api";
 import { useBadges } from "../../context/BadgeContext";
+import api from "../../services/api";
 import { socket, SOCKET_EVENTS } from "../../services/socket";
 
 const getTimeAgo = (date: string | Date) => {
@@ -144,7 +144,9 @@ export default function SalesOrdersScreen() {
       fetchOrders();
       refreshCounts();
     });
-    return () => { socket.off(SOCKET_EVENTS.DATA_UPDATED); };
+    return () => {
+      socket.off(SOCKET_EVENTS.DATA_UPDATED);
+    };
   }, [fetchOrders, refreshCounts]);
 
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
@@ -437,7 +439,9 @@ export default function SalesOrdersScreen() {
               <ScrollView style={styles.modalScroll}>
                 <View style={styles.detailSection}>
                   <Text style={styles.detailLabel}>S_ORDER</Text>
-                  <Text style={styles.detailValue}>{selectedOrder?.S_Order}</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedOrder?.S_Order}
+                  </Text>
 
                   <Text style={styles.detailLabel}>CUSTOMER NAME</Text>
                   <Text style={styles.detailValue}>
@@ -491,7 +495,9 @@ export default function SalesOrdersScreen() {
                         style={[
                           styles.detailValue,
                           {
-                            color: getStatusColor(selectedOrder?.Costing_Status),
+                            color: getStatusColor(
+                              selectedOrder?.Costing_Status,
+                            ),
                           },
                         ]}
                       >
@@ -528,10 +534,12 @@ export default function SalesOrdersScreen() {
 
 //css
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: G.offwhite,
-    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%' } : {})
+    ...(Platform.OS === "web"
+      ? { maxWidth: 800, alignSelf: "center", width: "100%" }
+      : {}),
   },
 
   header: {
@@ -616,7 +624,7 @@ const styles = StyleSheet.create({
   categoryChipText: { fontSize: 12.5, fontWeight: "600", color: G.sub },
   categoryChipTextActive: { color: G.white },
 
-  listContent: { padding: 16, paddingBottom: Platform.OS === 'web' ? 30 : 100 },
+  listContent: { padding: 16, paddingBottom: Platform.OS === "web" ? 30 : 100 },
 
   card: {
     backgroundColor: G.white,
@@ -625,8 +633,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1.5,
     borderColor: G.border,
-    ...(Platform.OS === 'web'
-      ? { boxShadow: '0px 4px 10px rgba(0,0,0,0.07)' }
+    ...(Platform.OS === "web"
+      ? { boxShadow: "0px 4px 10px rgba(0,0,0,0.07)" }
       : {
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 4 },
@@ -753,7 +761,9 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: G.white,
     borderRadius: 24,
-    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%', marginBottom: 20 } : {}),
+    ...(Platform.OS === "web"
+      ? { maxWidth: 800, alignSelf: "center", width: "100%", marginBottom: 20 }
+      : {}),
     maxHeight: "85%",
     overflow: "hidden",
   },

@@ -1,6 +1,5 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import * as SecureStore from "../../utils/storage";
 import {
   AlertCircle,
   ChevronRight,
@@ -12,24 +11,25 @@ import {
   ShoppingBag,
   TrendingUp,
   User,
-  X
+  X,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
-import { useBadges } from "../../context/BadgeContext";
-import { socket, SOCKET_EVENTS } from "../../services/socket";
 import {
   ActivityIndicator,
   Alert,
   Modal,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Platform,
 } from "react-native";
+import { useBadges } from "../../context/BadgeContext";
 import api from "../../services/api";
+import { socket, SOCKET_EVENTS } from "../../services/socket";
+import * as SecureStore from "../../utils/storage";
 
 export default function DashboardScreen() {
   const { dashboardData, loading: badgeLoading, refreshCounts } = useBadges();
@@ -38,9 +38,10 @@ export default function DashboardScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [customerFilter, setCustomerFilter] = useState("All Customers");
   const [detailModalVisible, setDetailModalVisible] = useState(false);
-  const [historyDetailModalVisible, setHistoryDetailModalVisible] = useState(false);
+  const [historyDetailModalVisible, setHistoryDetailModalVisible] =
+    useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any>(null);
- 
+
   const [selectedOutstanding, setSelectedOutstanding] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
   const ITEMS_PER_PAGE = 3;
@@ -109,8 +110,8 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     const loadUser = async () => {
-        const storedUser = await SecureStore.getItemAsync("username");
-        if (storedUser) setUsername(storedUser);
+      const storedUser = await SecureStore.getItemAsync("username");
+      if (storedUser) setUsername(storedUser);
     };
     loadUser();
   }, []);
@@ -176,7 +177,9 @@ export default function DashboardScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: Platform.OS === 'web' ? 30 : 100 }}
+      contentContainerStyle={{
+        paddingBottom: Platform.OS === "web" ? 30 : 100,
+      }}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -451,503 +454,656 @@ export default function DashboardScreen() {
         {/* Modal */}
         {modalVisible && (
           <Modal visible={modalVisible} animationType="slide" transparent>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Outstanding Details</Text>
-                <TouchableOpacity
-                  onPress={() => setModalVisible(false)}
-                  style={styles.closeBtn}
-                >
-                  <X size={20} color="white" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.filterContainer}>
-                <Text style={styles.filterTitle}>FILTER BY CUSTOMER</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.filterScroll}
-                >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Outstanding Details</Text>
                   <TouchableOpacity
-                    style={[
-                      styles.filterChip,
-                      customerFilter === "All Customers" &&
-                        styles.filterChipActive,
-                    ]}
-                    onPress={() => setCustomerFilter("All Customers")}
+                    onPress={() => setModalVisible(false)}
+                    style={styles.closeBtn}
                   >
-                    <Text
-                      style={[
-                        styles.filterChipText,
-                        customerFilter === "All Customers" &&
-                          styles.filterChipTextActive,
-                      ]}
-                    >
-                      All Customers
-                    </Text>
+                    <X size={20} color="white" />
                   </TouchableOpacity>
-                  {uniqueCustomers.map((cust: any, idx: number) => (
+                </View>
+
+                <View style={styles.filterContainer}>
+                  <Text style={styles.filterTitle}>FILTER BY CUSTOMER</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.filterScroll}
+                  >
                     <TouchableOpacity
-                      key={idx}
                       style={[
                         styles.filterChip,
-                        customerFilter === cust && styles.filterChipActive,
+                        customerFilter === "All Customers" &&
+                          styles.filterChipActive,
                       ]}
-                      onPress={() => setCustomerFilter(cust)}
+                      onPress={() => setCustomerFilter("All Customers")}
                     >
                       <Text
                         style={[
                           styles.filterChipText,
-                          customerFilter === cust &&
+                          customerFilter === "All Customers" &&
                             styles.filterChipTextActive,
                         ]}
                       >
-                        {cust}
+                        All Customers
                       </Text>
                     </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-
-              <View style={styles.tableContainer}>
-                <View style={styles.tableHeaderRow}>
-                  <Text style={[styles.thText, { flex: 2 }]}>Customer</Text>
-                  <Text style={[styles.thText, { flex: 1.5 }]}>Order</Text>
-                  <Text
-                    style={[styles.thText, { flex: 1.5, textAlign: "right" }]}
-                  >
-                    Net Amt
-                  </Text>
-                  <Text
-                    style={[styles.thText, { flex: 1.5, textAlign: "right" }]}
-                  >
-                    Paid
-                  </Text>
-                  <Text
-                    style={[styles.thText, { flex: 1.5, textAlign: "right" }]}
-                  >
-                    Balance
-                  </Text>
-                </View>
-
-                <ScrollView
-                  style={styles.tableBodyScroll}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  {filteredOutstandingList.map((item: any, idx: number) => {
-                    const balance =
-                      (item.Net_Amount || 0) - (item.Paid_Amount || 0);
-                    const isPaid = balance <= 0;
-                    return (
+                    {uniqueCustomers.map((cust: any, idx: number) => (
                       <TouchableOpacity
                         key={idx}
                         style={[
-                          styles.tableRow,
-                          idx % 2 === 1 && styles.tableRowAlt,
+                          styles.filterChip,
+                          customerFilter === cust && styles.filterChipActive,
                         ]}
-                        onPress={() => {
-                          setSelectedOutstanding(item);
-                          setDetailModalVisible(true);
-                        }}
+                        onPress={() => setCustomerFilter(cust)}
                       >
-                        <View style={{ flex: 2 }}>
-                          <View style={styles.rowBulletContainer}>
-                            <View style={styles.rowBullet} />
-                            <Text
-                              style={[
-                                styles.tdText,
-                                { fontWeight: "700", color: "#1A1A1A" },
-                              ]}
-                              numberOfLines={1}
-                            >
-                              {item.Customer_Name}
-                            </Text>
-                          </View>
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              marginTop: 2,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                fontSize: 9,
-                                color: "#888",
-                                fontWeight: "600",
-                              }}
-                            >
-                              {item.Tr_Type} |{" "}
-                            </Text>
-                            <Text style={{ fontSize: 9, color: "#888" }}>
-                              {new Date(item.Tr_Date).toLocaleDateString()}
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View style={{ flex: 1.5 }}>
-                          <Text
-                            style={[styles.tdText, { color: "#444" }]}
-                            numberOfLines={1}
-                          >
-                            {item.S_Order}
-                          </Text>
-                          <Text
-                            style={{ fontSize: 9, color: "#AAA" }}
-                            numberOfLines={1}
-                          >
-                            Ref: {item.Ref_No}
-                          </Text>
-                        </View>
-
                         <Text
                           style={[
-                            styles.tdText,
-                            { flex: 1.2, textAlign: "right" },
+                            styles.filterChipText,
+                            customerFilter === cust &&
+                              styles.filterChipTextActive,
                           ]}
-                          numberOfLines={1}
                         >
-                          Rs.{item.Net_Amount?.toLocaleString()}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.tdText,
-                            { flex: 1.2, textAlign: "right" },
-                          ]}
-                          numberOfLines={1}
-                        >
-                          Rs.{item.Paid_Amount?.toLocaleString()}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.tdText,
-                            {
-                              flex: 1.5,
-                              textAlign: "right",
-                              color: isPaid ? "#0ea043" : "#D32F2F",
-                              fontWeight: "bold",
-                            },
-                          ]}
-                          numberOfLines={1}
-                        >
-                          Rs.{balance.toLocaleString()}
+                          {cust}
                         </Text>
                       </TouchableOpacity>
-                    );
-                  })}
-                  {filteredOutstandingList.length === 0 && (
-                    <View style={{ padding: 20, alignItems: "center" }}>
-                      <Text style={{ color: "#666" }}>No records found.</Text>
-                    </View>
-                  )}
-                </ScrollView>
-              </View>
+                    ))}
+                  </ScrollView>
+                </View>
 
-              <View style={[styles.summaryFooter, { paddingBottom: 40 }]}>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Total Records</Text>
-                  <Text style={styles.summaryValue}>
-                    {filteredOutstandingList.length}
-                  </Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Total Net Amount</Text>
-                  <Text style={styles.summaryValue}>
-                    Rs. {totalFilteredNet.toLocaleString()}
-                  </Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Total Paid</Text>
-                  <Text style={styles.summaryValue}>
-                    Rs. {totalFilteredPaid.toLocaleString()}
-                  </Text>
-                </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabelBold}>Remaining to Pay</Text>
-                  <Text style={styles.summaryValueBigRed}>
-                    Rs. {totalFilteredBalance.toLocaleString()}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Detail Overlay replaces the second Modal to work properly on iOS */}
-            {detailModalVisible && (
-              <View
-                style={[
-                  StyleSheet.absoluteFill,
-                  {
-                    backgroundColor: "rgba(0,0,0,0.6)",
-                    justifyContent: "center",
-                    padding: 25,
-                    zIndex: 1000,
-                  },
-                ]}
-              >
-                <View
-                  style={{
-                    backgroundColor: "white",
-                    borderRadius: 20,
-                    overflow: "hidden",
-                    ...(Platform.OS === 'web' ? { maxWidth: 600, alignSelf: 'center', width: '100%' } : {}),
-                  }}
-                >
-                  <View style={[styles.modalHeader, { padding: 15 }]}>
-                    <Text style={styles.modalTitle}>Order Details</Text>
-                    <TouchableOpacity
-                      onPress={() => setDetailModalVisible(false)}
-                      style={styles.closeBtn}
+                <View style={styles.tableContainer}>
+                  <View style={styles.tableHeaderRow}>
+                    <Text style={[styles.thText, { flex: 2 }]}>Customer</Text>
+                    <Text style={[styles.thText, { flex: 1.5 }]}>Order</Text>
+                    <Text
+                      style={[styles.thText, { flex: 1.5, textAlign: "right" }]}
                     >
-                      <X size={18} color="white" />
-                    </TouchableOpacity>
+                      Net Amt
+                    </Text>
+                    <Text
+                      style={[styles.thText, { flex: 1.5, textAlign: "right" }]}
+                    >
+                      Paid
+                    </Text>
+                    <Text
+                      style={[styles.thText, { flex: 1.5, textAlign: "right" }]}
+                    >
+                      Balance
+                    </Text>
                   </View>
 
-                  {selectedOutstanding && (
-                    <View style={{ padding: 20 }}>
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          color: "#888",
-                          fontWeight: "bold",
-                          marginBottom: 5,
-                        }}
-                      >
-                        CUSTOMER NAME
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 18,
-                          color: "#333",
-                          fontWeight: "bold",
-                          marginBottom: 20,
-                        }}
-                      >
-                        {selectedOutstanding.Customer_Name}
-                      </Text>
+                  <ScrollView
+                    style={styles.tableBodyScroll}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    {filteredOutstandingList.map((item: any, idx: number) => {
+                      const balance =
+                        (item.Net_Amount || 0) - (item.Paid_Amount || 0);
+                      const isPaid = balance <= 0;
+                      return (
+                        <TouchableOpacity
+                          key={idx}
+                          style={[
+                            styles.tableRow,
+                            idx % 2 === 1 && styles.tableRowAlt,
+                          ]}
+                          onPress={() => {
+                            setSelectedOutstanding(item);
+                            setDetailModalVisible(true);
+                          }}
+                        >
+                          <View style={{ flex: 2 }}>
+                            <View style={styles.rowBulletContainer}>
+                              <View style={styles.rowBullet} />
+                              <Text
+                                style={[
+                                  styles.tdText,
+                                  { fontWeight: "700", color: "#1A1A1A" },
+                                ]}
+                                numberOfLines={1}
+                              >
+                                {item.Customer_Name}
+                              </Text>
+                            </View>
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                marginTop: 2,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: 9,
+                                  color: "#888",
+                                  fontWeight: "600",
+                                }}
+                              >
+                                {item.Tr_Type} |{" "}
+                              </Text>
+                              <Text style={{ fontSize: 9, color: "#888" }}>
+                                {new Date(item.Tr_Date).toLocaleDateString()}
+                              </Text>
+                            </View>
+                          </View>
 
-                      <View style={{ flexDirection: "row", marginBottom: 15 }}>
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color: "#AAA",
-                              fontWeight: "bold",
-                            }}
-                          >
-                            S_ORDER
-                          </Text>
-                          <Text
-                            style={{
-                              fontSize: 14,
-                              color: "#333",
-                              fontWeight: "600",
-                            }}
-                          >
-                            {selectedOutstanding.S_Order}
-                          </Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color: "#AAA",
-                              fontWeight: "bold",
-                            }}
-                          >
-                            REF_NO
-                          </Text>
-                          <Text
-                            style={{
-                              fontSize: 14,
-                              color: "#333",
-                              fontWeight: "600",
-                            }}
-                          >
-                            {selectedOutstanding.Ref_No}
-                          </Text>
-                        </View>
-                      </View>
+                          <View style={{ flex: 1.5 }}>
+                            <Text
+                              style={[styles.tdText, { color: "#444" }]}
+                              numberOfLines={1}
+                            >
+                              {item.S_Order}
+                            </Text>
+                            <Text
+                              style={{ fontSize: 9, color: "#AAA" }}
+                              numberOfLines={1}
+                            >
+                              Ref: {item.Ref_No}
+                            </Text>
+                          </View>
 
-                      <View style={{ flexDirection: "row", marginBottom: 15 }}>
-                        <View style={{ flex: 1 }}>
                           <Text
-                            style={{
-                              fontSize: 12,
-                              color: "#AAA",
-                              fontWeight: "bold",
-                            }}
+                            style={[
+                              styles.tdText,
+                              { flex: 1.2, textAlign: "right" },
+                            ]}
+                            numberOfLines={1}
                           >
-                            PAY TYPE
+                            Rs.{item.Net_Amount?.toLocaleString()}
                           </Text>
                           <Text
-                            style={{
-                              fontSize: 14,
-                              color: "#0ea043",
-                              fontWeight: "bold",
-                            }}
+                            style={[
+                              styles.tdText,
+                              { flex: 1.2, textAlign: "right" },
+                            ]}
+                            numberOfLines={1}
                           >
-                            {selectedOutstanding.Tr_Type}
-                          </Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color: "#AAA",
-                              fontWeight: "bold",
-                            }}
-                          >
-                            DATE
+                            Rs.{item.Paid_Amount?.toLocaleString()}
                           </Text>
                           <Text
-                            style={{
-                              fontSize: 14,
-                              color: "#333",
-                              fontWeight: "600",
-                            }}
+                            style={[
+                              styles.tdText,
+                              {
+                                flex: 1.5,
+                                textAlign: "right",
+                                color: isPaid ? "#0ea043" : "#D32F2F",
+                                fontWeight: "bold",
+                              },
+                            ]}
+                            numberOfLines={1}
                           >
-                            {new Date(
-                              selectedOutstanding.Tr_Date,
-                            ).toLocaleDateString()}
+                            Rs.{balance.toLocaleString()}
                           </Text>
-                        </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                    {filteredOutstandingList.length === 0 && (
+                      <View style={{ padding: 20, alignItems: "center" }}>
+                        <Text style={{ color: "#666" }}>No records found.</Text>
                       </View>
+                    )}
+                  </ScrollView>
+                </View>
 
-                      <View
-                        style={{
-                          height: 1,
-                          backgroundColor: "#EEE",
-                          marginVertical: 10,
-                        }}
-                      />
+                <View style={[styles.summaryFooter, { paddingBottom: 40 }]}>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Total Records</Text>
+                    <Text style={styles.summaryValue}>
+                      {filteredOutstandingList.length}
+                    </Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Total Net Amount</Text>
+                    <Text style={styles.summaryValue}>
+                      Rs. {totalFilteredNet.toLocaleString()}
+                    </Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Total Paid</Text>
+                    <Text style={styles.summaryValue}>
+                      Rs. {totalFilteredPaid.toLocaleString()}
+                    </Text>
+                  </View>
+                  <View style={styles.summaryDivider} />
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabelBold}>
+                      Remaining to Pay
+                    </Text>
+                    <Text style={styles.summaryValueBigRed}>
+                      Rs. {totalFilteredBalance.toLocaleString()}
+                    </Text>
+                  </View>
+                </View>
+              </View>
 
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          marginBottom: 8,
-                        }}
+              {/* Detail Overlay replaces the second Modal to work properly on iOS */}
+              {detailModalVisible && (
+                <View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: "rgba(0,0,0,0.6)",
+                      justifyContent: "center",
+                      padding: 25,
+                      zIndex: 1000,
+                    },
+                  ]}
+                >
+                  <View
+                    style={{
+                      backgroundColor: "white",
+                      borderRadius: 20,
+                      overflow: "hidden",
+                      ...(Platform.OS === "web"
+                        ? { maxWidth: 600, alignSelf: "center", width: "100%" }
+                        : {}),
+                    }}
+                  >
+                    <View style={[styles.modalHeader, { padding: 15 }]}>
+                      <Text style={styles.modalTitle}>Order Details</Text>
+                      <TouchableOpacity
+                        onPress={() => setDetailModalVisible(false)}
+                        style={styles.closeBtn}
                       >
-                        <Text style={{ color: "#100f0f", fontWeight: "600" }}>
-                          Net Amount
-                        </Text>
-                        <Text style={{ fontWeight: "700", color: "#333" }}>
-                          Rs. {selectedOutstanding.Net_Amount?.toLocaleString()}
-                        </Text>
-                      </View>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          marginBottom: 8,
-                        }}
-                      >
-                        <Text style={{ color: "#020202", fontWeight: "600" }}>
-                          Paid Amount
-                        </Text>
-                        <Text style={{ fontWeight: "700", color: "#0ea043" }}>
-                          Rs.{" "}
-                          {selectedOutstanding.Paid_Amount?.toLocaleString()}
-                        </Text>
-                      </View>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          marginTop: 10,
-                        }}
-                      >
-                        <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-                          Balance
+                        <X size={18} color="white" />
+                      </TouchableOpacity>
+                    </View>
+
+                    {selectedOutstanding && (
+                      <View style={{ padding: 20 }}>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#888",
+                            fontWeight: "bold",
+                            marginBottom: 5,
+                          }}
+                        >
+                          CUSTOMER NAME
                         </Text>
                         <Text
                           style={{
-                            fontWeight: "bold",
                             fontSize: 18,
-                            color: "#D32F2F",
+                            color: "#333",
+                            fontWeight: "bold",
+                            marginBottom: 20,
                           }}
                         >
-                          Rs.{" "}
-                          {(
-                            selectedOutstanding.Net_Amount -
-                            selectedOutstanding.Paid_Amount
-                          ).toLocaleString()}
+                          {selectedOutstanding.Customer_Name}
                         </Text>
-                      </View>
 
-                      <TouchableOpacity
-                        style={{
-                          backgroundColor: "#0ea043",
-                          padding: 15,
-                          borderRadius: 12,
-                          alignItems: "center",
-                          marginTop: 25,
-                        }}
-                        onPress={() => setDetailModalVisible(false)}
-                      >
-                        <Text style={{ color: "white", fontWeight: "bold" }}>
-                          OK
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
+                        <View
+                          style={{ flexDirection: "row", marginBottom: 15 }}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={{
+                                fontSize: 12,
+                                color: "#AAA",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              S_ORDER
+                            </Text>
+                            <Text
+                              style={{
+                                fontSize: 14,
+                                color: "#333",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {selectedOutstanding.S_Order}
+                            </Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={{
+                                fontSize: 12,
+                                color: "#AAA",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              REF_NO
+                            </Text>
+                            <Text
+                              style={{
+                                fontSize: 14,
+                                color: "#333",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {selectedOutstanding.Ref_No}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View
+                          style={{ flexDirection: "row", marginBottom: 15 }}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={{
+                                fontSize: 12,
+                                color: "#AAA",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              PAY TYPE
+                            </Text>
+                            <Text
+                              style={{
+                                fontSize: 14,
+                                color: "#0ea043",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {selectedOutstanding.Tr_Type}
+                            </Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={{
+                                fontSize: 12,
+                                color: "#AAA",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              DATE
+                            </Text>
+                            <Text
+                              style={{
+                                fontSize: 14,
+                                color: "#333",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {new Date(
+                                selectedOutstanding.Tr_Date,
+                              ).toLocaleDateString()}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View
+                          style={{
+                            height: 1,
+                            backgroundColor: "#EEE",
+                            marginVertical: 10,
+                          }}
+                        />
+
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            marginBottom: 8,
+                          }}
+                        >
+                          <Text style={{ color: "#100f0f", fontWeight: "600" }}>
+                            Net Amount
+                          </Text>
+                          <Text style={{ fontWeight: "700", color: "#333" }}>
+                            Rs.{" "}
+                            {selectedOutstanding.Net_Amount?.toLocaleString()}
+                          </Text>
+                        </View>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            marginBottom: 8,
+                          }}
+                        >
+                          <Text style={{ color: "#020202", fontWeight: "600" }}>
+                            Paid Amount
+                          </Text>
+                          <Text style={{ fontWeight: "700", color: "#0ea043" }}>
+                            Rs.{" "}
+                            {selectedOutstanding.Paid_Amount?.toLocaleString()}
+                          </Text>
+                        </View>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            marginTop: 10,
+                          }}
+                        >
+                          <Text style={{ fontWeight: "bold", fontSize: 16 }}>
+                            Balance
+                          </Text>
+                          <Text
+                            style={{
+                              fontWeight: "bold",
+                              fontSize: 18,
+                              color: "#D32F2F",
+                            }}
+                          >
+                            Rs.{" "}
+                            {(
+                              selectedOutstanding.Net_Amount -
+                              selectedOutstanding.Paid_Amount
+                            ).toLocaleString()}
+                          </Text>
+                        </View>
+
+                        <TouchableOpacity
+                          style={{
+                            backgroundColor: "#0ea043",
+                            padding: 15,
+                            borderRadius: 12,
+                            alignItems: "center",
+                            marginTop: 25,
+                          }}
+                          onPress={() => setDetailModalVisible(false)}
+                        >
+                          <Text style={{ color: "white", fontWeight: "bold" }}>
+                            OK
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
                 </View>
-              </View>
-            )}
-          </View>
-        </Modal>
-      )}
+              )}
+            </View>
+          </Modal>
+        )}
 
         {/* History Detail Modal */}
         {historyDetailModalVisible && (
-          <Modal visible={historyDetailModalVisible} animationType="fade" transparent>
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 25, zIndex: 1000 }]}>
-              <View style={{ backgroundColor: "white", borderRadius: 20, overflow: "hidden", ...(Platform.OS === 'web' ? { maxWidth: 600, alignSelf: 'center', width: '100%' } : {}) }}>
+          <Modal
+            visible={historyDetailModalVisible}
+            animationType="fade"
+            transparent
+          >
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: "rgba(0,0,0,0.6)",
+                  justifyContent: "center",
+                  padding: 25,
+                  zIndex: 1000,
+                },
+              ]}
+            >
+              <View
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: 20,
+                  overflow: "hidden",
+                  ...(Platform.OS === "web"
+                    ? { maxWidth: 600, alignSelf: "center", width: "100%" }
+                    : {}),
+                }}
+              >
                 <View style={[styles.modalHeader, { padding: 15 }]}>
                   <Text style={styles.modalTitle}>History Details</Text>
-                  <TouchableOpacity onPress={() => setHistoryDetailModalVisible(false)} style={styles.closeBtn}>
+                  <TouchableOpacity
+                    onPress={() => setHistoryDetailModalVisible(false)}
+                    style={styles.closeBtn}
+                  >
                     <X size={18} color="white" />
                   </TouchableOpacity>
                 </View>
                 {selectedHistoryItem && (
                   <View style={{ padding: 20 }}>
-                    <Text style={{ fontSize: 12, color: "#888", fontWeight: "bold", marginBottom: 5 }}>CUSTOMER NAME</Text>
-                    <Text style={{ fontSize: 18, color: "#333", fontWeight: "bold", marginBottom: 20 }}>{selectedHistoryItem.Customer_Name}</Text>
-                    
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: "#888",
+                        fontWeight: "bold",
+                        marginBottom: 5,
+                      }}
+                    >
+                      CUSTOMER NAME
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        color: "#333",
+                        fontWeight: "bold",
+                        marginBottom: 20,
+                      }}
+                    >
+                      {selectedHistoryItem.Customer_Name}
+                    </Text>
+
                     <View style={{ flexDirection: "row", marginBottom: 15 }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>ORDER NO</Text>
-                        <Text style={{ fontSize: 14, color: "#333", fontWeight: "600" }}>{selectedHistoryItem.S_Order}</Text>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#AAA",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          ORDER NO
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            color: "#333",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {selectedHistoryItem.S_Order}
+                        </Text>
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>TYPE</Text>
-                        <Text style={{ fontSize: 14, color: "#0ea043", fontWeight: "bold" }}>{selectedHistoryItem.ApprovedType}</Text>
-                      </View>
-                    </View>
-                    
-                    <View style={{ flexDirection: "row", marginBottom: 15 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>PRODUCT</Text>
-                        <Text style={{ fontSize: 14, color: "#333", fontWeight: "600" }}>{selectedHistoryItem.Product_Name || "N/A"}</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>DATE</Text>
-                        <Text style={{ fontSize: 14, color: "#333", fontWeight: "600" }}>{new Date(selectedHistoryItem.Tr_Date).toLocaleDateString()}</Text>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#AAA",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          TYPE
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            color: "#0ea043",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {selectedHistoryItem.ApprovedType}
+                        </Text>
                       </View>
                     </View>
 
-                    <View style={{ height: 1, backgroundColor: "#EEE", marginVertical: 10 }} />
-                    
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-                      <Text style={{ fontWeight: "bold", fontSize: 16 }}>Rate</Text>
-                      <Text style={{ fontWeight: "bold", fontSize: 18, color: "#D32F2F" }}>Rs. {selectedHistoryItem.Rate?.toLocaleString()}</Text>
+                    <View style={{ flexDirection: "row", marginBottom: 15 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#AAA",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          PRODUCT
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            color: "#333",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {selectedHistoryItem.Product_Name || "N/A"}
+                        </Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#AAA",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          DATE
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            color: "#333",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {new Date(
+                            selectedHistoryItem.Tr_Date,
+                          ).toLocaleDateString()}
+                        </Text>
+                      </View>
                     </View>
-                    
-                    <TouchableOpacity style={{ backgroundColor: "#0ea043", padding: 15, borderRadius: 12, alignItems: "center", marginTop: 25 }} onPress={() => setHistoryDetailModalVisible(false)}>
-                      <Text style={{ color: "white", fontWeight: "bold" }}>Close</Text>
+
+                    <View
+                      style={{
+                        height: 1,
+                        backgroundColor: "#EEE",
+                        marginVertical: 10,
+                      }}
+                    />
+
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginTop: 10,
+                      }}
+                    >
+                      <Text style={{ fontWeight: "bold", fontSize: 16 }}>
+                        Rate
+                      </Text>
+                      <Text
+                        style={{
+                          fontWeight: "bold",
+                          fontSize: 18,
+                          color: "#D32F2F",
+                        }}
+                      >
+                        Rs. {selectedHistoryItem.Rate?.toLocaleString()}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: "#0ea043",
+                        padding: 15,
+                        borderRadius: 12,
+                        alignItems: "center",
+                        marginTop: 25,
+                      }}
+                      onPress={() => setHistoryDetailModalVisible(false)}
+                    >
+                      <Text style={{ color: "white", fontWeight: "bold" }}>
+                        Close
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -1057,7 +1213,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F7F8FA",
-    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%' } : {}),
+    ...(Platform.OS === "web"
+      ? { maxWidth: 800, alignSelf: "center", width: "100%" }
+      : {}),
   },
   centered: {
     flex: 1,
@@ -1069,12 +1227,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'web' ? 25 : 50,
+    paddingTop: Platform.OS === "web" ? 25 : 50,
     paddingBottom: 25,
     backgroundColor: "rgb(255, 255, 255)",
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
-    ...(Platform.OS === 'web'
+    ...(Platform.OS === "web"
       ? { boxShadow: "0px 2px 18px rgba(0,0,0,0.15)" }
       : {
           shadowColor: "#000",
@@ -1144,7 +1302,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
-    ...(Platform.OS === 'web'
+    ...(Platform.OS === "web"
       ? { boxShadow: "0px 4px 10px rgba(0,0,0,0.1)" }
       : {
           shadowColor: "#000",
@@ -1183,7 +1341,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 15,
     width: "48%",
-    ...(Platform.OS === 'web'
+    ...(Platform.OS === "web"
       ? { boxShadow: "0px 2px 10px rgba(0,0,0,0.1)" }
       : {
           elevation: 3,
@@ -1192,25 +1350,25 @@ const styles = StyleSheet.create({
           shadowOpacity: 0.1,
           shadowRadius: 10,
         }),
-    position: 'relative',
+    position: "relative",
   },
   badgeContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 10,
     right: 10,
-    backgroundColor: '#FF3B30',
+    backgroundColor: "#FF3B30",
     borderRadius: 10,
     minWidth: 20,
     height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 4,
     zIndex: 1,
   },
   iconBadgeText: {
-    color: 'white',
+    color: "white",
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   iconCircle: {
     width: 40,
@@ -1236,7 +1394,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 25,
-    ...(Platform.OS === 'web'
+    ...(Platform.OS === "web"
       ? { boxShadow: "0px 2px 5px rgba(0,0,0,0.05)" }
       : {
           shadowColor: "#000",
@@ -1359,7 +1517,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 15,
     marginBottom: 10,
-    ...(Platform.OS === 'web'
+    ...(Platform.OS === "web"
       ? { boxShadow: "0px 1px 2px rgba(0,0,0,0.05)" }
       : {
           shadowColor: "#000",
@@ -1430,7 +1588,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 10,
-    ...(Platform.OS === 'web'
+    ...(Platform.OS === "web"
       ? { boxShadow: "0px 2px 4px rgba(0,0,0,0.1)" }
       : {
           elevation: 2,
@@ -1457,7 +1615,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 15,
     marginBottom: 10,
-    ...(Platform.OS === 'web'
+    ...(Platform.OS === "web"
       ? { boxShadow: "0px 2px 6px rgba(0,0,0,0.1)" }
       : {
           elevation: 3,
@@ -1548,7 +1706,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F8FA",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%', borderRadius: 20, marginBottom: 20 } : {}),
+    ...(Platform.OS === "web"
+      ? {
+          maxWidth: 800,
+          alignSelf: "center",
+          width: "100%",
+          borderRadius: 20,
+          marginBottom: 20,
+        }
+      : {}),
     height: "85%",
   },
   modalHeader: {
@@ -1592,7 +1758,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginHorizontal: 15,
     borderRadius: 10,
-    ...(Platform.OS === 'web'
+    ...(Platform.OS === "web"
       ? { boxShadow: "0px 2px 5px rgba(0,0,0,0.05)" }
       : {
           elevation: 2,
