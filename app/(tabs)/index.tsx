@@ -117,22 +117,31 @@ export default function DashboardScreen() {
   }, []);
 
   const handleLogout = async () => {
-    Alert.alert("Logout", "Are you sure you want to logout?⚠️🔒", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        onPress: async () => {
-          try {
-            await api.post("/logout");
-          } catch (e) {
-            console.error("Backend logout error", e);
-          }
-          await SecureStore.deleteItemAsync("token");
-          await SecureStore.deleteItemAsync("username");
-          router.replace("/login");
+    const logoutAction = async () => {
+      try {
+        await api.post("/logout");
+      } catch (e) {
+        console.error("Backend logout error", e);
+      }
+      await SecureStore.deleteItemAsync("token");
+      await SecureStore.deleteItemAsync("username");
+      router.replace("/login");
+    };
+
+    if (Platform.OS === "web") {
+      const confirmLogout = window.confirm("Are you sure you want to logout?⚠️🔒");
+      if (confirmLogout) {
+        await logoutAction();
+      }
+    } else {
+      Alert.alert("Logout", "Are you sure you want to logout?⚠️🔒", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          onPress: logoutAction,
         },
-      },
-    ]);
+      ]);
+    }
   };
 
   if (loading && !refreshing) {

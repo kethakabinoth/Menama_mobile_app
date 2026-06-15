@@ -71,6 +71,7 @@ export default function LoginScreen() {
           <TextInput
             style={styles.input}
             placeholder="Username"
+            placeholderTextColor="#3c4041af"
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: "#333",
     marginBottom: 5,
   },
