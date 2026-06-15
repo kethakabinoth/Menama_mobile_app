@@ -414,112 +414,114 @@ export default function SalesOrdersScreen() {
       />
 
       {/* Modal */}
-      <Modal
-        animationType="slide"
-        transparent
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalGreenHeader}>
-              <View style={styles.modalHeaderRow}>
-                <Text style={styles.modalTitle}>
-                  Order: {selectedOrder?.S_Order}
-                </Text>
-                <TouchableOpacity onPress={() => setModalVisible(false)}>
-                  <X size={24} color={G.white} />
-                </TouchableOpacity>
+      {modalVisible && (
+        <Modal
+          animationType="slide"
+          transparent
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalGreenHeader}>
+                <View style={styles.modalHeaderRow}>
+                  <Text style={styles.modalTitle}>
+                    Order: {selectedOrder?.S_Order}
+                  </Text>
+                  <TouchableOpacity onPress={() => setModalVisible(false)}>
+                    <X size={24} color={G.white} />
+                  </TouchableOpacity>
+                </View>
               </View>
+
+              <ScrollView style={styles.modalScroll}>
+                <View style={styles.detailSection}>
+                  <Text style={styles.detailLabel}>S_ORDER</Text>
+                  <Text style={styles.detailValue}>{selectedOrder?.S_Order}</Text>
+
+                  <Text style={styles.detailLabel}>CUSTOMER NAME</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedOrder?.Customer_Name}
+                  </Text>
+
+                  <Text style={styles.detailLabel}>PRODUCT NAME</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedOrder?.Product_Name}
+                  </Text>
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.detailLabel}>RATE</Text>
+                      <Text style={[styles.detailValue, { color: G.red }]}>
+                        Rs. {selectedOrder?.Rate?.toLocaleString()}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.detailLabel}>DATE</Text>
+                      <Text style={styles.detailValue}>
+                        {selectedOrder?.Tr_Date
+                          ? new Date(selectedOrder.Tr_Date).toLocaleDateString()
+                          : "N/A"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: G.border,
+                      marginVertical: 20,
+                    }}
+                  />
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.detailLabel}>COSTING </Text>
+                      <Text
+                        style={[
+                          styles.detailValue,
+                          {
+                            color: getStatusColor(selectedOrder?.Costing_Status),
+                          },
+                        ]}
+                      >
+                        {selectedOrder?.Costing_Status || "Pending"}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.detailLabel}>QUOTATION </Text>
+                      <Text
+                        style={[
+                          styles.detailValue,
+                          {
+                            color: getStatusColor(
+                              selectedOrder?.Quatation_Status,
+                            ),
+                          },
+                        ]}
+                      >
+                        {selectedOrder?.Quatation_Status || "Pending"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Outstanding balance removed per request */}
+                </View>
+              </ScrollView>
             </View>
-
-            <ScrollView style={styles.modalScroll}>
-              <View style={styles.detailSection}>
-                <Text style={styles.detailLabel}>S_ORDER</Text>
-                <Text style={styles.detailValue}>{selectedOrder?.S_Order}</Text>
-
-                <Text style={styles.detailLabel}>CUSTOMER NAME</Text>
-                <Text style={styles.detailValue}>
-                  {selectedOrder?.Customer_Name}
-                </Text>
-
-                <Text style={styles.detailLabel}>PRODUCT NAME</Text>
-                <Text style={styles.detailValue}>
-                  {selectedOrder?.Product_Name}
-                </Text>
-
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.detailLabel}>RATE</Text>
-                    <Text style={[styles.detailValue, { color: G.red }]}>
-                      Rs. {selectedOrder?.Rate?.toLocaleString()}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.detailLabel}>DATE</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedOrder?.Tr_Date
-                        ? new Date(selectedOrder.Tr_Date).toLocaleDateString()
-                        : "N/A"}
-                    </Text>
-                  </View>
-                </View>
-
-                <View
-                  style={{
-                    height: 1,
-                    backgroundColor: G.border,
-                    marginVertical: 20,
-                  }}
-                />
-
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.detailLabel}>COSTING </Text>
-                    <Text
-                      style={[
-                        styles.detailValue,
-                        {
-                          color: getStatusColor(selectedOrder?.Costing_Status),
-                        },
-                      ]}
-                    >
-                      {selectedOrder?.Costing_Status || "Pending"}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.detailLabel}>QUOTATION </Text>
-                    <Text
-                      style={[
-                        styles.detailValue,
-                        {
-                          color: getStatusColor(
-                            selectedOrder?.Quatation_Status,
-                          ),
-                        },
-                      ]}
-                    >
-                      {selectedOrder?.Quatation_Status || "Pending"}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Outstanding balance removed per request */}
-              </View>
-            </ScrollView>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -623,11 +625,15 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1.5,
     borderColor: G.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 10,
-    elevation: 4,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0px 4px 10px rgba(0,0,0,0.07)' }
+      : {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.07,
+          shadowRadius: 10,
+          elevation: 4,
+        }),
   },
   cardAccent: { height: 6, backgroundColor: G.dark },
   cardHeader: {

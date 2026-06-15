@@ -462,170 +462,172 @@ export default function AllPaymentsScreen() {
       )}
 
       {/* ── Modal ── */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {/* Green header section */}
-            <View style={styles.modalGreenHeader}>
-              {/* Decorative circles */}
-              <View style={styles.decorCircle1} />
-              <View style={styles.decorCircle2} />
+      {modalVisible && (
+        <Modal visible={modalVisible} animationType="slide" transparent>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              {/* Green header section */}
+              <View style={styles.modalGreenHeader}>
+                {/* Decorative circles */}
+                <View style={styles.decorCircle1} />
+                <View style={styles.decorCircle2} />
 
-              <View style={styles.modalHeaderRow}>
-                <Text style={styles.modalTitle}>
-                  {activeTab} Payment Review
-                </Text>
-                <TouchableOpacity
-                  style={styles.modalCloseBtn}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <X size={16} color={G.white} />
-                </TouchableOpacity>
-              </View>
-
-              {/* Payment details card inside green header */}
-              <View style={styles.modalInfoCard}>
-                <View style={styles.modalInfoTopRow}>
-                  <View>
-                    <Text style={styles.modalInfoLabel}>PAY_NO</Text>
-                    <Text style={styles.modalInfoValue}>
-                      {selectedPayment?.Pay_No || selectedPayment?.Voucher_No}
-                    </Text>
-                  </View>
-                  <View style={styles.pendingBadge}>
-                    <Text style={styles.pendingBadgeText}>Pending</Text>
-                  </View>
+                <View style={styles.modalHeaderRow}>
+                  <Text style={styles.modalTitle}>
+                    {activeTab} Payment Review
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.modalCloseBtn}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <X size={16} color={G.white} />
+                  </TouchableOpacity>
                 </View>
 
-                <Text style={styles.modalInfoLabel}>PAYEE</Text>
-                <Text style={styles.modalInfoValue}>
-                  {selectedPayment?.Supplier_Name ||
-                    selectedPayment?.Technician_Name ||
-                    selectedPayment?.Acc_Name}
-                </Text>
-
-                <View style={styles.modalDivider} />
-
-                <Text style={styles.modalAmountLabel}>TOTAL AMOUNT</Text>
-                <Text style={styles.modalAmount}>
-                  {formatCurrency(
-                    selectedPayment?.Amount || selectedPayment?.Tobe_Paid || 0,
-                  )}
-                </Text>
-              </View>
-            </View>
-
-            {/* White body */}
-            <ScrollView
-              style={styles.modalScroll}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Technician extras */}
-              {activeTab === "Technician" && (
-                <View style={styles.techRow}>
-                  <View style={styles.techCell}>
-                    <Text style={styles.techLabel}>Sales Order</Text>
-                    <Text style={styles.techValue}>
-                      {selectedPayment?.S_Order || "N/A"}
-                    </Text>
+                {/* Payment details card inside green header */}
+                <View style={styles.modalInfoCard}>
+                  <View style={styles.modalInfoTopRow}>
+                    <View>
+                      <Text style={styles.modalInfoLabel}>PAY_NO</Text>
+                      <Text style={styles.modalInfoValue}>
+                        {selectedPayment?.Pay_No || selectedPayment?.Voucher_No}
+                      </Text>
+                    </View>
+                    <View style={styles.pendingBadge}>
+                      <Text style={styles.pendingBadgeText}>Pending</Text>
+                    </View>
                   </View>
-                  <View style={styles.techCell}>
-                    <Text style={styles.techLabel}>Tr. Date</Text>
-                    <Text style={styles.techValue}>
-                      {formatDate(selectedPayment?.Tr_Date)}
-                    </Text>
-                  </View>
-                  <View style={styles.techCell}>
-                    <Text style={styles.techLabel}>Tr. Type</Text>
-                    <Text style={styles.techValue}>
-                      {selectedPayment?.Tr_Type || "N/A"}
-                    </Text>
-                  </View>
+
+                  <Text style={styles.modalInfoLabel}>PAYEE</Text>
+                  <Text style={styles.modalInfoValue}>
+                    {selectedPayment?.Supplier_Name ||
+                      selectedPayment?.Technician_Name ||
+                      selectedPayment?.Acc_Name}
+                  </Text>
+
+                  <View style={styles.modalDivider} />
+
+                  <Text style={styles.modalAmountLabel}>TOTAL AMOUNT</Text>
+                  <Text style={styles.modalAmount}>
+                    {formatCurrency(
+                      selectedPayment?.Amount || selectedPayment?.Tobe_Paid || 0,
+                    )}
+                  </Text>
                 </View>
-              )}
+              </View>
 
-              {/* Cheque information */}
-              {details && details.length > 0 && (
-                <>
-                  <Text style={styles.sectionTitle}>Cheque Information</Text>
-                  {details.map((d: any, i: number) => (
-                    <View key={i} style={styles.chequeCard}>
-                      <View style={styles.chequeRow}>
-                        <View>
-                          <Text style={styles.chequeLabel}>Chq No.</Text>
-                          <Text style={styles.chequeValue}>{d.Chq_No}</Text>
-                        </View>
-                        <View style={{ alignItems: "flex-end" }}>
-                          <Text style={styles.chequeLabel}>Acc No.</Text>
-                          <Text style={styles.chequeValue}>{d.Acc_No}</Text>
-                        </View>
-                      </View>
-                      <View style={styles.chequeDivider} />
-                      <View style={styles.chequeRow}>
-                        <View>
-                          <Text style={styles.chequeLabel}>Amount</Text>
-                          <Text style={[styles.chequeValue, { color: G.dark }]}>
-                            {formatCurrency(d.Amount)}
-                          </Text>
-                        </View>
-                        {!!d.DOR && (
+              {/* White body */}
+              <ScrollView
+                style={styles.modalScroll}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* Technician extras */}
+                {activeTab === "Technician" && (
+                  <View style={styles.techRow}>
+                    <View style={styles.techCell}>
+                      <Text style={styles.techLabel}>Sales Order</Text>
+                      <Text style={styles.techValue}>
+                        {selectedPayment?.S_Order || "N/A"}
+                      </Text>
+                    </View>
+                    <View style={styles.techCell}>
+                      <Text style={styles.techLabel}>Tr. Date</Text>
+                      <Text style={styles.techValue}>
+                        {formatDate(selectedPayment?.Tr_Date)}
+                      </Text>
+                    </View>
+                    <View style={styles.techCell}>
+                      <Text style={styles.techLabel}>Tr. Type</Text>
+                      <Text style={styles.techValue}>
+                        {selectedPayment?.Tr_Type || "N/A"}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* Cheque information */}
+                {details && details.length > 0 && (
+                  <>
+                    <Text style={styles.sectionTitle}>Cheque Information</Text>
+                    {details.map((d: any, i: number) => (
+                      <View key={i} style={styles.chequeCard}>
+                        <View style={styles.chequeRow}>
+                          <View>
+                            <Text style={styles.chequeLabel}>Chq No.</Text>
+                            <Text style={styles.chequeValue}>{d.Chq_No}</Text>
+                          </View>
                           <View style={{ alignItems: "flex-end" }}>
-                            <Text
-                              style={[styles.chequeLabel, { color: "#ef810c" }]}
-                            >
-                              Date Realized On
-                            </Text>
-                            <Text
-                              style={[styles.chequeValue, { color: G.red }]}
-                            >
-                              {formatDate(d.DOR)}
+                            <Text style={styles.chequeLabel}>Acc No.</Text>
+                            <Text style={styles.chequeValue}>{d.Acc_No}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.chequeDivider} />
+                        <View style={styles.chequeRow}>
+                          <View>
+                            <Text style={styles.chequeLabel}>Amount</Text>
+                            <Text style={[styles.chequeValue, { color: G.dark }]}>
+                              {formatCurrency(d.Amount)}
                             </Text>
                           </View>
-                        )}
+                          {!!d.DOR && (
+                            <View style={{ alignItems: "flex-end" }}>
+                              <Text
+                                style={[styles.chequeLabel, { color: "#ef810c" }]}
+                              >
+                                Date Realized On
+                              </Text>
+                              <Text
+                                style={[styles.chequeValue, { color: G.red }]}
+                              >
+                                {formatDate(d.DOR)}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
                       </View>
-                    </View>
-                  ))}
-                </>
-              )}
-
-              {/* Awaiting notice */}
-              <View style={styles.awaitingNotice}>
-                <View style={styles.awaitingDot} />
-                <Text style={styles.awaitingText}>
-                  This payment is awaiting your approval
-                </Text>
-              </View>
-            </ScrollView>
-
-            {/* Action buttons */}
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={[styles.approveBtn, actionLoading && { opacity: 0.6 }]}
-                disabled={actionLoading}
-                onPress={() => handleAction(selectedPayment?.ID, "approve")}
-              >
-                {actionLoading ? (
-                  <ActivityIndicator color={G.white} size="small" />
-                ) : (
-                  <>
-                    <Check size={18} color={G.white} />
-                    <Text style={styles.btnText}>Approve</Text>
+                    ))}
                   </>
                 )}
-              </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.rejectBtn, actionLoading && { opacity: 0.6 }]}
-                disabled={actionLoading}
-                onPress={() => handleAction(selectedPayment?.ID, "reject")}
-              >
-                <X size={18} color={G.red} />
-                <Text style={[styles.btnText, { color: G.red }]}>Reject</Text>
-              </TouchableOpacity>
+                {/* Awaiting notice */}
+                <View style={styles.awaitingNotice}>
+                  <View style={styles.awaitingDot} />
+                  <Text style={styles.awaitingText}>
+                    This payment is awaiting your approval
+                  </Text>
+                </View>
+              </ScrollView>
+
+              {/* Action buttons */}
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  style={[styles.approveBtn, actionLoading && { opacity: 0.6 }]}
+                  disabled={actionLoading}
+                  onPress={() => handleAction(selectedPayment?.ID, "approve")}
+                >
+                  {actionLoading ? (
+                    <ActivityIndicator color={G.white} size="small" />
+                  ) : (
+                    <>
+                      <Check size={18} color={G.white} />
+                      <Text style={styles.btnText}>Approve</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.rejectBtn, actionLoading && { opacity: 0.6 }]}
+                  disabled={actionLoading}
+                  onPress={() => handleAction(selectedPayment?.ID, "reject")}
+                >
+                  <X size={18} color={G.red} />
+                  <Text style={[styles.btnText, { color: G.red }]}>Reject</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -746,11 +748,15 @@ const styles = StyleSheet.create({
     borderBlockColor: G.dark,
     borderWidth: 2,
     borderColor: G.border,
-    shadowColor: G.dark,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0px 3px 8px rgba(27,94,59,0.08)' }
+      : {
+          shadowColor: G.dark,
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 3,
+        }),
   },
   cardAccent: { height: 4, backgroundColor: G.dark },
   cardHeader: {

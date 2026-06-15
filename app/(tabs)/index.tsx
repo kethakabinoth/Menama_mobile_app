@@ -449,7 +449,8 @@ export default function DashboardScreen() {
         </TouchableOpacity>
 
         {/* Modal */}
-        <Modal visible={modalVisible} animationType="slide" transparent>
+        {modalVisible && (
+          <Modal visible={modalVisible} animationType="slide" transparent>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
@@ -552,15 +553,18 @@ export default function DashboardScreen() {
                         }}
                       >
                         <View style={{ flex: 2 }}>
-                          <Text
-                            style={[
-                              styles.tdText,
-                              { fontWeight: "700", color: "#1A1A1A" },
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {item.Customer_Name}
-                          </Text>
+                          <View style={styles.rowBulletContainer}>
+                            <View style={styles.rowBullet} />
+                            <Text
+                              style={[
+                                styles.tdText,
+                                { fontWeight: "700", color: "#1A1A1A" },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {item.Customer_Name}
+                            </Text>
+                          </View>
                           <View
                             style={{
                               flexDirection: "row",
@@ -895,59 +899,62 @@ export default function DashboardScreen() {
             )}
           </View>
         </Modal>
+      )}
 
         {/* History Detail Modal */}
-        <Modal visible={historyDetailModalVisible} animationType="fade" transparent>
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 25, zIndex: 1000 }]}>
-            <View style={{ backgroundColor: "white", borderRadius: 20, overflow: "hidden", ...(Platform.OS === 'web' ? { maxWidth: 600, alignSelf: 'center', width: '100%' } : {}) }}>
-              <View style={[styles.modalHeader, { padding: 15 }]}>
-                <Text style={styles.modalTitle}>History Details</Text>
-                <TouchableOpacity onPress={() => setHistoryDetailModalVisible(false)} style={styles.closeBtn}>
-                  <X size={18} color="white" />
-                </TouchableOpacity>
-              </View>
-              {selectedHistoryItem && (
-                <View style={{ padding: 20 }}>
-                  <Text style={{ fontSize: 12, color: "#888", fontWeight: "bold", marginBottom: 5 }}>CUSTOMER NAME</Text>
-                  <Text style={{ fontSize: 18, color: "#333", fontWeight: "bold", marginBottom: 20 }}>{selectedHistoryItem.Customer_Name}</Text>
-                  
-                  <View style={{ flexDirection: "row", marginBottom: 15 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>ORDER NO</Text>
-                      <Text style={{ fontSize: 14, color: "#333", fontWeight: "600" }}>{selectedHistoryItem.S_Order}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>TYPE</Text>
-                      <Text style={{ fontSize: 14, color: "#0ea043", fontWeight: "bold" }}>{selectedHistoryItem.ApprovedType}</Text>
-                    </View>
-                  </View>
-                  
-                  <View style={{ flexDirection: "row", marginBottom: 15 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>PRODUCT</Text>
-                      <Text style={{ fontSize: 14, color: "#333", fontWeight: "600" }}>{selectedHistoryItem.Product_Name || "N/A"}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>DATE</Text>
-                      <Text style={{ fontSize: 14, color: "#333", fontWeight: "600" }}>{new Date(selectedHistoryItem.Tr_Date).toLocaleDateString()}</Text>
-                    </View>
-                  </View>
-
-                  <View style={{ height: 1, backgroundColor: "#EEE", marginVertical: 10 }} />
-                  
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-                    <Text style={{ fontWeight: "bold", fontSize: 16 }}>Rate</Text>
-                    <Text style={{ fontWeight: "bold", fontSize: 18, color: "#D32F2F" }}>Rs. {selectedHistoryItem.Rate?.toLocaleString()}</Text>
-                  </View>
-                  
-                  <TouchableOpacity style={{ backgroundColor: "#0ea043", padding: 15, borderRadius: 12, alignItems: "center", marginTop: 25 }} onPress={() => setHistoryDetailModalVisible(false)}>
-                    <Text style={{ color: "white", fontWeight: "bold" }}>Close</Text>
+        {historyDetailModalVisible && (
+          <Modal visible={historyDetailModalVisible} animationType="fade" transparent>
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 25, zIndex: 1000 }]}>
+              <View style={{ backgroundColor: "white", borderRadius: 20, overflow: "hidden", ...(Platform.OS === 'web' ? { maxWidth: 600, alignSelf: 'center', width: '100%' } : {}) }}>
+                <View style={[styles.modalHeader, { padding: 15 }]}>
+                  <Text style={styles.modalTitle}>History Details</Text>
+                  <TouchableOpacity onPress={() => setHistoryDetailModalVisible(false)} style={styles.closeBtn}>
+                    <X size={18} color="white" />
                   </TouchableOpacity>
                 </View>
-              )}
+                {selectedHistoryItem && (
+                  <View style={{ padding: 20 }}>
+                    <Text style={{ fontSize: 12, color: "#888", fontWeight: "bold", marginBottom: 5 }}>CUSTOMER NAME</Text>
+                    <Text style={{ fontSize: 18, color: "#333", fontWeight: "bold", marginBottom: 20 }}>{selectedHistoryItem.Customer_Name}</Text>
+                    
+                    <View style={{ flexDirection: "row", marginBottom: 15 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>ORDER NO</Text>
+                        <Text style={{ fontSize: 14, color: "#333", fontWeight: "600" }}>{selectedHistoryItem.S_Order}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>TYPE</Text>
+                        <Text style={{ fontSize: 14, color: "#0ea043", fontWeight: "bold" }}>{selectedHistoryItem.ApprovedType}</Text>
+                      </View>
+                    </View>
+                    
+                    <View style={{ flexDirection: "row", marginBottom: 15 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>PRODUCT</Text>
+                        <Text style={{ fontSize: 14, color: "#333", fontWeight: "600" }}>{selectedHistoryItem.Product_Name || "N/A"}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 12, color: "#AAA", fontWeight: "bold" }}>DATE</Text>
+                        <Text style={{ fontSize: 14, color: "#333", fontWeight: "600" }}>{new Date(selectedHistoryItem.Tr_Date).toLocaleDateString()}</Text>
+                      </View>
+                    </View>
+
+                    <View style={{ height: 1, backgroundColor: "#EEE", marginVertical: 10 }} />
+                    
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
+                      <Text style={{ fontWeight: "bold", fontSize: 16 }}>Rate</Text>
+                      <Text style={{ fontWeight: "bold", fontSize: 18, color: "#D32F2F" }}>Rs. {selectedHistoryItem.Rate?.toLocaleString()}</Text>
+                    </View>
+                    
+                    <TouchableOpacity style={{ backgroundColor: "#0ea043", padding: 15, borderRadius: 12, alignItems: "center", marginTop: 25 }} onPress={() => setHistoryDetailModalVisible(false)}>
+                      <Text style={{ color: "white", fontWeight: "bold" }}>Close</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
-        </Modal>
+          </Modal>
+        )}
 
         <Text style={styles.sectionTitle}>Approved History</Text>
         {data?.history && data.history.length > 0 ? (
@@ -1067,10 +1074,14 @@ const styles = StyleSheet.create({
     backgroundColor: "rgb(255, 255, 255)",
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 18,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: "0px 2px 18px rgba(0,0,0,0.15)" }
+      : {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 18,
+        }),
   },
   welcomeText: {
     fontSize: 19,
@@ -1133,11 +1144,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: "0px 4px 10px rgba(0,0,0,0.1)" }
+      : {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 10,
+          elevation: 5,
+        }),
   },
   mainCardLabel: {
     color: "rgba(255,255,255,0.8)",
@@ -1168,11 +1183,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 15,
     width: "48%",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: "0px 2px 10px rgba(0,0,0,0.1)" }
+      : {
+          elevation: 3,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 10,
+        }),
     position: 'relative',
   },
   badgeContainer: {
@@ -1217,11 +1236,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: "0px 2px 5px rgba(0,0,0,0.05)" }
+      : {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 5,
+          elevation: 2,
+        }),
   },
   outRow: {
     flexDirection: "row",
@@ -1336,11 +1359,15 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 15,
     marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: "0px 1px 2px rgba(0,0,0,0.05)" }
+      : {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 2,
+          elevation: 2,
+        }),
   },
   historyInfo: {
     flexDirection: "row",
@@ -1403,11 +1430,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 10,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: "0px 2px 4px rgba(0,0,0,0.1)" }
+      : {
+          elevation: 2,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        }),
   },
   categoryItem: {
     alignItems: "center",
@@ -1426,11 +1457,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 15,
     marginBottom: 10,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: "0px 2px 6px rgba(0,0,0,0.1)" }
+      : {
+          elevation: 3,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 6,
+        }),
   },
   approvalMenuItem: {
     flexDirection: "row",
@@ -1557,10 +1592,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginHorizontal: 15,
     borderRadius: 10,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: "0px 2px 5px rgba(0,0,0,0.05)" }
+      : {
+          elevation: 2,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 5,
+        }),
   },
   tableHeaderRow: {
     flexDirection: "row",
@@ -1581,6 +1621,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tableRowAlt: { backgroundColor: "#FAFAFA" },
+  rowBulletContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  rowBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#0b8e2e",
+    marginRight: 8,
+  },
   tdText: { fontSize: 12, color: "#333" },
   summaryFooter: {
     backgroundColor: "white",

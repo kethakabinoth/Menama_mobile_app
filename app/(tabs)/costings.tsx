@@ -332,28 +332,30 @@ export default function CostingsScreen() {
         />
       )}
 
-      <Modal transparent visible={showDatePicker && Platform.OS === "web"} animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.webDatePickerContent}>
-            <Text style={styles.webDatePickerTitle}>Set Date Filter</Text>
-            <TextInput
-              style={styles.webDateInput}
-              placeholder="YYYY-MM-DD"
-              value={webDateInput}
-              onChangeText={setWebDateInput}
-              autoFocus
-            />
-            <View style={styles.webModalActionRow}>
-              <TouchableOpacity style={[styles.webModalBtn, { backgroundColor: G.faint }]} onPress={() => setShowDatePicker(false)}>
-                <Text style={{ color: G.dark, fontWeight: "600" }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.webModalBtn, { backgroundColor: G.dark }]} onPress={handleWebDateFilter}>
-                <Text style={{ color: G.white, fontWeight: "600" }}>Apply</Text>
-              </TouchableOpacity>
+      {(showDatePicker && Platform.OS === "web") && (
+        <Modal transparent visible={showDatePicker && Platform.OS === "web"} animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.webDatePickerContent}>
+              <Text style={styles.webDatePickerTitle}>Set Date Filter</Text>
+              <TextInput
+                style={styles.webDateInput}
+                placeholder="YYYY-MM-DD"
+                value={webDateInput}
+                onChangeText={setWebDateInput}
+                autoFocus
+              />
+              <View style={styles.webModalActionRow}>
+                <TouchableOpacity style={[styles.webModalBtn, { backgroundColor: G.faint }]} onPress={() => setShowDatePicker(false)}>
+                  <Text style={{ color: G.dark, fontWeight: "600" }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.webModalBtn, { backgroundColor: G.dark }]} onPress={handleWebDateFilter}>
+                  <Text style={{ color: G.white, fontWeight: "600" }}>Apply</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
 
       <FlatList
         data={groupedFilteredOrders.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)}
@@ -406,93 +408,95 @@ export default function CostingsScreen() {
       />
 
       {/* ── Modal ──────────────────────────────────────────────── */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.mainModalOverlay}>
-          <View style={styles.mainModalContent}>
+      {modalVisible && (
+        <Modal visible={modalVisible} animationType="slide" transparent>
+          <View style={styles.mainModalOverlay}>
+            <View style={styles.mainModalContent}>
 
-            {/* Green header */}
-            <View style={styles.modalGreenHeader}>
-              <View style={styles.decorCircle1} />
-              <View style={styles.decorCircle2} />
+              {/* Green header */}
+              <View style={styles.modalGreenHeader}>
+                <View style={styles.decorCircle1} />
+                <View style={styles.decorCircle2} />
 
-              <View style={styles.modalHeaderRow}>
-                <Text style={styles.modalTitle}>Costing Details</Text>
-                <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setModalVisible(false)}>
-                  <X size={16} color={G.white} />
+                <View style={styles.modalHeaderRow}>
+                  <Text style={styles.modalTitle}>Costing Details</Text>
+                  <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setModalVisible(false)}>
+                    <X size={16} color={G.white} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.modalInfoCard}>
+                  <Text style={styles.modalInfoLabel}>ORDER</Text>
+                  <Text style={styles.modalInfoValue}>{selectedOrder?.S_Order}</Text>
+
+                  <Text style={styles.modalInfoLabel}>CUSTOMER</Text>
+                  <Text style={styles.modalInfoValue}>{selectedOrder?.Customer_Name}</Text>
+
+                  <View style={styles.modalDivider} />
+
+                  <Text style={styles.modalAmountLabel}>GROUP TOTAL</Text>
+                  <Text style={styles.modalAmount}>{formatCurrency(selectedOrder?.total || 0)}</Text>
+                </View>
+              </View>
+
+              {/* White body */}
+              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                <Text style={styles.sectionTitle}>Materials</Text>
+                <View style={styles.materialTableModal}>
+                  <View style={styles.materialTableHeader}>
+                    <Text style={[styles.tableHead, { flex: 2 }]}>Material</Text>
+                    <Text style={[styles.tableHead, { flex: 1, textAlign: "center" }]}>Rate</Text>
+                    <Text style={[styles.tableHead, { flex: 1, textAlign: "center" }]}>Qty</Text>
+                    <Text style={[styles.tableHead, { flex: 1.5, textAlign: "right" }]}>Total</Text>
+                  </View>
+                  {selectedOrder?.materials?.map((mat: any, idx: number) => (
+                    <View key={idx} style={styles.materialRow}>
+                      <Text style={[styles.matText, { flex: 2 }]}>{mat.Material_Name}</Text>
+                      <Text style={[styles.matText, { flex: 1, textAlign: "center" }]}>{Number(mat.Rate).toFixed(0)}</Text>
+                      <Text style={[styles.matText, { flex: 1, textAlign: "center" }]}>{mat.Qty}</Text>
+                      <Text style={[styles.matText, { flex: 1.5, textAlign: "right", color: G.dark, fontWeight: "700" }]}>
+                        {Number(mat.Total).toFixed(0)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+
+                <View style={styles.awaitingNotice}>
+                  <View style={styles.awaitingDot} />
+                  <Text style={styles.awaitingText}>Awaiting your approval to proceed</Text>
+                </View>
+              </ScrollView>
+
+              {/* Action buttons */}
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  style={[styles.approveBtn, actionLoading && { opacity: 0.6 }]}
+                  disabled={actionLoading}
+                  onPress={() => handleAction(selectedOrder?.id, "approve")}
+                >
+                  {actionLoading ? (
+                    <ActivityIndicator color={G.white} size="small" />
+                  ) : (
+                    <>
+                      <Check size={18} color={G.white} />
+                      <Text style={styles.btnText}>Approve</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.rejectBtn, actionLoading && { opacity: 0.6 }]}
+                  disabled={actionLoading}
+                  onPress={() => handleAction(selectedOrder?.id, "reject")}
+                >
+                  <X size={18} color={G.red} />
+                  <Text style={[styles.btnText, { color: G.red }]}>Reject</Text>
                 </TouchableOpacity>
               </View>
-
-              <View style={styles.modalInfoCard}>
-                <Text style={styles.modalInfoLabel}>ORDER</Text>
-                <Text style={styles.modalInfoValue}>{selectedOrder?.S_Order}</Text>
-
-                <Text style={styles.modalInfoLabel}>CUSTOMER</Text>
-                <Text style={styles.modalInfoValue}>{selectedOrder?.Customer_Name}</Text>
-
-                <View style={styles.modalDivider} />
-
-                <Text style={styles.modalAmountLabel}>GROUP TOTAL</Text>
-                <Text style={styles.modalAmount}>{formatCurrency(selectedOrder?.total || 0)}</Text>
-              </View>
-            </View>
-
-            {/* White body */}
-            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-              <Text style={styles.sectionTitle}>Materials</Text>
-              <View style={styles.materialTableModal}>
-                <View style={styles.materialTableHeader}>
-                  <Text style={[styles.tableHead, { flex: 2 }]}>Material</Text>
-                  <Text style={[styles.tableHead, { flex: 1, textAlign: "center" }]}>Rate</Text>
-                  <Text style={[styles.tableHead, { flex: 1, textAlign: "center" }]}>Qty</Text>
-                  <Text style={[styles.tableHead, { flex: 1.5, textAlign: "right" }]}>Total</Text>
-                </View>
-                {selectedOrder?.materials?.map((mat: any, idx: number) => (
-                  <View key={idx} style={styles.materialRow}>
-                    <Text style={[styles.matText, { flex: 2 }]}>{mat.Material_Name}</Text>
-                    <Text style={[styles.matText, { flex: 1, textAlign: "center" }]}>{Number(mat.Rate).toFixed(0)}</Text>
-                    <Text style={[styles.matText, { flex: 1, textAlign: "center" }]}>{mat.Qty}</Text>
-                    <Text style={[styles.matText, { flex: 1.5, textAlign: "right", color: G.dark, fontWeight: "700" }]}>
-                      {Number(mat.Total).toFixed(0)}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.awaitingNotice}>
-                <View style={styles.awaitingDot} />
-                <Text style={styles.awaitingText}>Awaiting your approval to proceed</Text>
-              </View>
-            </ScrollView>
-
-            {/* Action buttons */}
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={[styles.approveBtn, actionLoading && { opacity: 0.6 }]}
-                disabled={actionLoading}
-                onPress={() => handleAction(selectedOrder?.id, "approve")}
-              >
-                {actionLoading ? (
-                  <ActivityIndicator color={G.white} size="small" />
-                ) : (
-                  <>
-                    <Check size={18} color={G.white} />
-                    <Text style={styles.btnText}>Approve</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.rejectBtn, actionLoading && { opacity: 0.6 }]}
-                disabled={actionLoading}
-                onPress={() => handleAction(selectedOrder?.id, "reject")}
-              >
-                <X size={18} color={G.red} />
-                <Text style={[styles.btnText, { color: G.red }]}>Reject</Text>
-              </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -593,8 +597,15 @@ const styles = StyleSheet.create({
     backgroundColor: G.white, marginBottom: 14,
     borderRadius: 18, overflow: "hidden",
     borderBlockColor: G.dark, borderWidth: 2, borderColor: G.border,
-    shadowColor: G.dark, shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0px 3px 8px rgba(27,94,59,0.08)' }
+      : {
+          shadowColor: G.dark,
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 3,
+        }),
   },
   cardAccent: { height: 4, backgroundColor: G.dark },
   cardHeader: {

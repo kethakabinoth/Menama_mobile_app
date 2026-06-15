@@ -134,11 +134,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 10,
-        shadowColor: '#007AFF',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-        elevation: 5,
+        ...(Platform.OS === 'web'
+          ? { boxShadow: '0px 4px 5px rgba(0, 122, 255, 0.3)' }
+          : {
+              shadowColor: '#007AFF',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 5,
+              elevation: 5,
+            }),
     },
     buttonText: {
         color: '#fff',
