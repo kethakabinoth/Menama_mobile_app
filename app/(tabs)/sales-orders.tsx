@@ -290,7 +290,16 @@ export default function SalesOrdersScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header Banner */}
+      <View style={styles.header}>
+        <View style={{ width: 44 }} />
+        <Text style={styles.headerTitle}>
+          {filterStr
+            ? `${filterStr.charAt(0).toUpperCase() + filterStr.slice(1)} Orders`
+            : "Sales Orders"}
+        </Text>
+        <View style={{ width: 44 }} />
+      </View>
+
       <View style={styles.filterBanner}>
         <View style={styles.bannerInfo}>
           <Filter size={22} color={G.dark} />
@@ -521,6 +530,22 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: G.offwhite,
     ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%' } : {})
+  },
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? 52 : 22,
+    paddingBottom: 14,
+    backgroundColor: G.white,
+  },
+  headerTitle: {
+    fontSize: 19,
+    fontWeight: "700",
+    color: G.base,
+    letterSpacing: 0.3,
   },
 
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },

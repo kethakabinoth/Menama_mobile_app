@@ -316,7 +316,7 @@ export default function AllPaymentsScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={22} color={G.white} />
+          <ArrowLeft size={22} color={G.base} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Payment Approvals</Text>
         <View style={{ width: 44 }} />
@@ -644,22 +644,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 24 : 25,
+    paddingTop: Platform.OS === "ios" ? 52 : 25,
     paddingBottom: 14,
-    backgroundColor: G.dark,
+    backgroundColor: G.white,
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: G.white,
+    borderWidth: 1,
+    borderColor: G.base,
     alignItems: "center",
     justifyContent: "center",
   },
   headerTitle: {
     fontSize: 19,
     fontWeight: "700",
-    color: G.white,
+    color: G.base,
     letterSpacing: 0.3,
   },
 

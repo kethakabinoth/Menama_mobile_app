@@ -12,8 +12,6 @@ import {
   X,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
-import { useBadges } from "../../context/BadgeContext";
-import { socket, SOCKET_EVENTS } from "../../services/socket";
 import {
   ActivityIndicator,
   Alert,
@@ -28,7 +26,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useBadges } from "../../context/BadgeContext";
 import api from "../../services/api";
+import { socket, SOCKET_EVENTS } from "../../services/socket";
 
 // ── Design tokens ────────────────────────────────────────────
 const G = {
@@ -145,7 +145,9 @@ export default function QuotationsScreen() {
     socket.on(SOCKET_EVENTS.DATA_UPDATED, () => {
       fetchQuotations();
     });
-    return () => { socket.off(SOCKET_EVENTS.DATA_UPDATED); };
+    return () => {
+      socket.off(SOCKET_EVENTS.DATA_UPDATED);
+    };
   }, [fetchQuotations]);
 
   const groupQuotations = (qList: any[]) => {
@@ -231,7 +233,7 @@ export default function QuotationsScreen() {
           <Text style={styles.orderNo}>{item.S_Order}</Text>
           <Text style={styles.customerName}>{item.Customer_Name}</Text>
         </View>
-        <View style={{ alignItems: 'flex-end' }}>
+        <View style={{ alignItems: "flex-end" }}>
           <View style={styles.readyBadge}>
             <View style={styles.statusDot} />
             <Text style={styles.readyBadgeText}>Quotation Ready</Text>
@@ -290,7 +292,7 @@ export default function QuotationsScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={22} color={G.white} />
+          <ArrowLeft size={22} color={G.base} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Quotations</Text>
         <View style={{ width: 44 }} />
@@ -420,7 +422,10 @@ export default function QuotationsScreen() {
             }}
           />
         }
-        contentContainerStyle={{ padding: 16, paddingBottom: Platform.OS === 'web' ? 30 : 110 }}
+        contentContainerStyle={{
+          padding: 16,
+          paddingBottom: Platform.OS === "web" ? 30 : 110,
+        }}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIcon}>
@@ -578,10 +583,12 @@ export default function QuotationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: G.offwhite,
-    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%' } : {})
+    ...(Platform.OS === "web"
+      ? { maxWidth: 800, alignSelf: "center", width: "100%" }
+      : {}),
   },
   header: {
     flexDirection: "row",
@@ -590,20 +597,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.OS === "ios" ? 52 : 22,
     paddingBottom: 14,
-    backgroundColor: G.dark,
+    backgroundColor: G.white,
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: G.white,
+    borderWidth: 1,
+    borderColor: G.base,
     alignItems: "center",
     justifyContent: "center",
   },
   headerTitle: {
     fontSize: 19,
     fontWeight: "700",
-    color: G.white,
+    color: G.base,
     letterSpacing: 0.3,
   },
 
@@ -834,7 +843,15 @@ const styles = StyleSheet.create({
     backgroundColor: G.white,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center', width: '100%', borderRadius: 28, marginBottom: 20 } : {}),
+    ...(Platform.OS === "web"
+      ? {
+          maxWidth: 800,
+          alignSelf: "center",
+          width: "100%",
+          borderRadius: 28,
+          marginBottom: 20,
+        }
+      : {}),
     maxHeight: "88%",
     overflow: "hidden",
   },

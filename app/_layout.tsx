@@ -1,18 +1,18 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import * as SecureStore from '../utils/storage';
-import 'react-native-reanimated';
-import { BadgeProvider } from '../context/BadgeContext';
+import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { Stack, useRouter, useSegments } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
+import "react-native-reanimated";
+import { BadgeProvider } from "../context/BadgeContext";
+import * as SecureStore from "../utils/storage";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 const customTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: '#F7F8FA',
+    background: "#F7F8FA",
   },
 };
 
@@ -25,11 +25,11 @@ export default function RootLayout() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = await SecureStore.getItemAsync('token');
-        const inTabsGroup = segments[0] === '(tabs)';
+        const token = await SecureStore.getItemAsync("token");
+        const inTabsGroup = segments[0] === "(tabs)";
 
         if (!token && inTabsGroup) {
-          router.replace('/login');
+          router.replace("/login");
         }
       } catch (error) {
         console.error(error);
@@ -38,7 +38,7 @@ export default function RootLayout() {
     };
 
     checkAuth();
-  }, [segments]);
+  }, [segments, router]);
 
   if (!isReady) return null;
 
@@ -48,7 +48,10 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          <Stack.Screen
+            name="modal"
+            options={{ presentation: "modal", title: "Modal" }}
+          />
         </Stack>
       </BadgeProvider>
       <StatusBar style="auto" />

@@ -263,7 +263,7 @@ export default function CostingsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={22} color={G.white} />
+          <ArrowLeft size={22} color={G.base} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Costings</Text>
         <View style={{ width: 44 }} />
@@ -510,14 +510,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.OS === "ios" ? 52 : 22,
     paddingBottom: 14,
-    backgroundColor: G.dark,
+    backgroundColor: G.white,
   },
   backButton: {
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: G.white,
+    borderWidth: 1,
+    borderColor: G.base,
     alignItems: "center", justifyContent: "center",
   },
-  headerTitle: { fontSize: 19, fontWeight: "700", color: G.white, letterSpacing: 0.3 },
+  headerTitle: { fontSize: 19, fontWeight: "700", color: G.base, letterSpacing: 0.3 },
 
   filterBanner: {
     flexDirection: "row",
