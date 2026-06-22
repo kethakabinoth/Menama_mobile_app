@@ -153,13 +153,30 @@ export default function CostingsScreen() {
     oList.forEach((item) => {
       const key = item.S_Order;
       if (!groups[key]) {
+        const electricity = Number(item.Electricity) || 0;
+        const other = Number(item.Other) || 0;
+        const transport = Number(item.Transport) || 0;
+        const labour = Number(item.Labour) || 0;
+        const finishing = Number(item.Finishing) || 0;
+        const osMachine = Number(item.OS_Machine) || 0;
+        const expensesTotal = electricity + other + transport + labour + finishing + osMachine;
+
         groups[key] = {
           S_Order: item.S_Order,
           Item_Name: item.Item_Name,
           Customer_Name: item.Customer_Name,
           Costing_Status: item.Costing_Status,
+          expenses: {
+            Electricity: electricity,
+            Other: other,
+            Transport: transport,
+            Labour: labour,
+            Finishing: finishing,
+            OS_Machine: osMachine
+          },
+          expensesTotal,
           materials: [],
-          total: 0,
+          total: expensesTotal,
           id: item.ID,
         };
       }
@@ -549,6 +566,14 @@ export default function CostingsScreen() {
                     <Text
                       style={[
                         styles.tableHead,
+                        { flex: 1, textAlign: "center" },
+                      ]}
+                    >
+                      Unit
+                    </Text>
+                    <Text
+                      style={[
+                        styles.tableHead,
                         { flex: 1.5, textAlign: "right" },
                       ]}
                     >
@@ -566,7 +591,7 @@ export default function CostingsScreen() {
                           { flex: 1, textAlign: "center" },
                         ]}
                       >
-                        {Number(mat.Rate).toFixed(0)}
+                        {Number(mat.Rate).toFixed(2)}
                       </Text>
                       <Text
                         style={[
@@ -574,7 +599,15 @@ export default function CostingsScreen() {
                           { flex: 1, textAlign: "center" },
                         ]}
                       >
-                        {mat.Qty}
+                        {Number(mat.Qty).toFixed(2)}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.matText,
+                          { flex: 1, textAlign: "center" },
+                        ]}
+                      >
+                        {mat.Unit || "-"}
                       </Text>
                       <Text
                         style={[
@@ -587,11 +620,59 @@ export default function CostingsScreen() {
                           },
                         ]}
                       >
-                        {Number(mat.Total).toFixed(0)}
+                        {Number(mat.Total).toFixed(2)}
                       </Text>
                     </View>
                   ))}
                 </View>
+
+                {selectedOrder?.expensesTotal > 0 && (
+                  <>
+                    <Text style={[styles.sectionTitle, { marginTop: 8 }]}>Additional Expenses</Text>
+                    <View style={styles.materialTableModal}>
+                      {selectedOrder?.expenses.Electricity > 0 && (
+                        <View style={styles.materialRow}>
+                          <Text style={[styles.matText, { flex: 1 }]}>Electricity</Text>
+                          <Text style={[styles.matText, { flex: 1, textAlign: "right" }]}>{Number(selectedOrder.expenses.Electricity).toFixed(2)}</Text>
+                        </View>
+                      )}
+                      {selectedOrder?.expenses.Other > 0 && (
+                        <View style={styles.materialRow}>
+                          <Text style={[styles.matText, { flex: 1 }]}>Other</Text>
+                          <Text style={[styles.matText, { flex: 1, textAlign: "right" }]}>{Number(selectedOrder.expenses.Other).toFixed(2)}</Text>
+                        </View>
+                      )}
+                      {selectedOrder?.expenses.Transport > 0 && (
+                        <View style={styles.materialRow}>
+                          <Text style={[styles.matText, { flex: 1 }]}>Transport</Text>
+                          <Text style={[styles.matText, { flex: 1, textAlign: "right" }]}>{Number(selectedOrder.expenses.Transport).toFixed(2)}</Text>
+                        </View>
+                      )}
+                      {selectedOrder?.expenses.Labour > 0 && (
+                        <View style={styles.materialRow}>
+                          <Text style={[styles.matText, { flex: 1 }]}>Labour</Text>
+                          <Text style={[styles.matText, { flex: 1, textAlign: "right" }]}>{Number(selectedOrder.expenses.Labour).toFixed(2)}</Text>
+                        </View>
+                      )}
+                      {selectedOrder?.expenses.Finishing > 0 && (
+                        <View style={styles.materialRow}>
+                          <Text style={[styles.matText, { flex: 1 }]}>Finishing</Text>
+                          <Text style={[styles.matText, { flex: 1, textAlign: "right" }]}>{Number(selectedOrder.expenses.Finishing).toFixed(2)}</Text>
+                        </View>
+                      )}
+                      {selectedOrder?.expenses.OS_Machine > 0 && (
+                        <View style={styles.materialRow}>
+                          <Text style={[styles.matText, { flex: 1 }]}>OS Machine</Text>
+                          <Text style={[styles.matText, { flex: 1, textAlign: "right" }]}>{Number(selectedOrder.expenses.OS_Machine).toFixed(2)}</Text>
+                        </View>
+                      )}
+                      <View style={[styles.materialRow, { borderTopWidth: 0.5, borderTopColor: G.border, marginTop: 4, paddingTop: 8 }]}>
+                        <Text style={[styles.matText, { flex: 1, fontWeight: "700" }]}>Expenses Total</Text>
+                        <Text style={[styles.matText, { flex: 1, textAlign: "right", fontWeight: "700", color: G.dark }]}>{Number(selectedOrder.expensesTotal).toFixed(2)}</Text>
+                      </View>
+                    </View>
+                  </>
+                )}
 
                 <View style={styles.awaitingNotice}>
                   <View style={styles.awaitingDot} />

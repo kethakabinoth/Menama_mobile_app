@@ -227,14 +227,20 @@ app.get("/costings", authenticateToken, async (req, res) => {
   try {
     const pool = await poolPromise;
     const result = await pool.request().query(`
-            SELECT PC.ID, PC.S_Order, PC.Item_Name, PC.Material_Name, PC.Rate, PC.Qty, PC.Total, PC.Status, 
-                   NS.Customer_Name, NS.Costing_Status, NS.Quatation_Status
+            SELECT PC.ID, PC.S_Order, PC.Item_Name, PC.Material_Name, PC.Rate, PC.Qty, PC.Total, PC.Status, LTRIM(RTRIM(PC.Unit)) AS Unit,
+                   NS.Customer_Name, NS.Costing_Status, NS.Quatation_Status,
+                   PH.Electricity, PH.Other, PH.Transport, PH.Labour, PH.Finishing, PH.OS_Machine
             FROM Pre_Costing PC
             OUTER APPLY (
                 SELECT TOP 1 Customer_Name, Costing_Status, Quatation_Status
                 FROM New_Sales_Order
                 WHERE S_Order = PC.S_Order
             ) NS
+            OUTER APPLY (
+                SELECT TOP 1 Electricity, Other, Transport, Labour, Finishing, OS_Machine
+                FROM PreCosting_H
+                WHERE S_Order = PC.S_Order
+            ) PH
             WHERE LTRIM(RTRIM(PC.Status)) = 'A'
         `);
     res.json(result.recordset);
@@ -265,6 +271,13 @@ app.put("/costings/:id/approve", authenticateToken, async (req, res) => {
         .input("sOrder", mssql.VarChar, sOrder)
         .query(
           "UPDATE Pre_Costing SET Status = 'Approved' WHERE S_Order = @sOrder",
+        );
+
+      await transaction
+        .request()
+        .input("sOrder", mssql.VarChar, sOrder)
+        .query(
+          "UPDATE PreCosting_H SET Status = 'Approved' WHERE S_Order = @sOrder",
         );
 
       await transaction
@@ -308,6 +321,13 @@ app.put("/costings/:id/reject", authenticateToken, async (req, res) => {
         .input("sOrder", mssql.VarChar, sOrder)
         .query(
           "UPDATE Pre_Costing SET Status = 'Rejected' WHERE S_Order = @sOrder",
+        );
+
+      await transaction
+        .request()
+        .input("sOrder", mssql.VarChar, sOrder)
+        .query(
+          "UPDATE PreCosting_H SET Status = 'Rejected' WHERE S_Order = @sOrder",
         );
 
       await transaction

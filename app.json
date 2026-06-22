@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.jpeg",
+    
     "scheme": "menama",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -26,7 +27,8 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/logo.jpeg",
+      "favicon": "./assets/images/favicon.png",
+      "icon": "./assets/images/apple-touch-icon.png",
       "backgroundColor": "#1B5E3B",
       "themeColor": "#1B5E3B"
     },
