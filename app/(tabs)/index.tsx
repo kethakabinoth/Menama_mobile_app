@@ -1118,9 +1118,10 @@ export default function DashboardScreen() {
                         marginBottom: 20,
                       }}
                     >
-                      {selectedHistoryItem.Customer_Name}
+                      {selectedHistoryItem.Customer_Name || selectedHistoryItem.Customer || "N/A"}
                     </Text>
 
+                    <View style={{ flexDirection: "row", marginBottom: 15 }}>
                       <View style={{ flex: 1 }}>
                         <Text
                           style={{
@@ -1149,16 +1150,16 @@ export default function DashboardScreen() {
                             fontWeight: "bold",
                           }}
                         >
-                          TYPE
+                          STATUS
                         </Text>
                         <Text
                           style={{
                             fontSize: 14,
-                            color: "#333",
-                            fontWeight: "600",
+                            color: (selectedHistoryItem.ApprovedType || selectedHistoryItem.Status || "") === "Rejected" ? "#D32F2F" : "#0ea043",
+                            fontWeight: "bold",
                           }}
                         >
-                          {selectedHistoryItem.ApprovedType || selectedHistoryItem.Status || "N/A"}
+                          {selectedHistoryItem.ApprovedType || (selectedHistoryItem.Status === "A" ? "Approved" : selectedHistoryItem.Status) || "N/A"}
                         </Text>
                       </View>
                     </View>
@@ -1172,16 +1173,16 @@ export default function DashboardScreen() {
                             fontWeight: "bold",
                           }}
                         >
-                          TYPE
+                          PRODUCT
                         </Text>
                         <Text
                           style={{
                             fontSize: 14,
-                            color: "#0ea043",
-                            fontWeight: "bold",
+                            color: "#333",
+                            fontWeight: "600",
                           }}
                         >
-                          {selectedHistoryItem.ApprovedType || selectedHistoryItem.Status || "N/A"}
+                          {selectedHistoryItem.Product_Name || selectedHistoryItem.Product || "N/A"}
                         </Text>
                       </View>
                       <View style={{ flex: 1 }}>
