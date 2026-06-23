@@ -606,15 +606,23 @@ app.get("/approval-hub/:category", authenticateToken, async (req, res) => {
     let query = "";
 
     if (category === "Costing") {
-      query = "SELECT ID, S_Order as OrderNo, Item_Name as Product, Total as Rate, LTRIM(RTRIM(Status)) as Status, Tr_Date as Date FROM Pre_Costing WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
+      query = `SELECT p.ID, p.S_Order as OrderNo, p.Item_Name as Product, p.Total as Rate, LTRIM(RTRIM(p.Status)) as Status, n.Tr_Date as Date, n.Customer_Name as Customer 
+               FROM Pre_Costing p 
+               LEFT JOIN New_Sales_Order n ON p.S_Order = n.S_Order 
+               WHERE LTRIM(RTRIM(p.Status)) IN ('Approved', 'A', 'Rejected') 
+               ORDER BY n.Tr_Date DESC, p.ID DESC`;
     } else if (category === "Quotations") {
-      query = "SELECT ID, S_Order as OrderNo, Item_Name as Product, Rate, LTRIM(RTRIM(Status)) as Status, Tr_Date as Date FROM Quatation WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
+      query = `SELECT q.ID, q.S_Order as OrderNo, q.Item_Name as Product, q.Rate as Rate, LTRIM(RTRIM(q.Status)) as Status, n.Tr_Date as Date, n.Customer_Name as Customer 
+               FROM Quatation q 
+               LEFT JOIN New_Sales_Order n ON q.S_Order = n.S_Order 
+               WHERE LTRIM(RTRIM(q.Status)) IN ('Approved', 'A', 'Rejected') 
+               ORDER BY n.Tr_Date DESC, q.ID DESC`;
     } else if (category === "Supplier") {
-      query = "SELECT ID, Pay_No as OrderNo, Supplier_Name as Product, Amount as Rate, LTRIM(RTRIM(Approvel)) as Status, Tr_Date as Date FROM Supplier_payment_H WHERE LTRIM(RTRIM(Approvel)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
+      query = "SELECT ID, Pay_No as OrderNo, Supplier_Name as Product, Amount as Rate, LTRIM(RTRIM(Approvel)) as Status, Tr_Date as Date, Supplier_Name as Customer FROM Supplier_payment_H WHERE LTRIM(RTRIM(Approvel)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
     } else if (category === "Technician") {
-      query = "SELECT ID, S_Order as OrderNo, Technician_Name as Product, Amount as Rate, LTRIM(RTRIM(Status)) as Status, Tr_Date as Date FROM Outside_Technician_Pay WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
+      query = "SELECT ID, S_Order as OrderNo, Technician_Name as Product, Amount as Rate, LTRIM(RTRIM(Status)) as Status, Tr_Date as Date, Technician_Name as Customer FROM Outside_Technician_Pay WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
     } else if (category === "Voucher") {
-      query = "SELECT ID, Voucher_No as OrderNo, Acc_Name as Product, Amount as Rate, LTRIM(RTRIM(Status)) as Status, Tr_Date as Date FROM Payment_Voucher WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
+      query = "SELECT ID, Voucher_No as OrderNo, Acc_Name as Product, Amount as Rate, LTRIM(RTRIM(Status)) as Status, Tr_Date as Date, Acc_Name as Customer FROM Payment_Voucher WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
     } else {
       return res.status(400).json({ message: "Invalid category" });
     }
