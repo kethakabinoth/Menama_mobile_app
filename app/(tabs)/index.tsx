@@ -60,6 +60,9 @@ export default function DashboardScreen() {
   const [loadingActiveOrders, setLoadingActiveOrders] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [outstandingSearchQuery, setOutstandingSearchQuery] = useState("");
+  const [approvalHubPage, setApprovalHubPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const [selectedOutstanding, setSelectedOutstanding] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -596,7 +599,13 @@ export default function DashboardScreen() {
                 </View>
 
                 <View style={styles.filterContainer}>
-                  <Text style={styles.filterTitle}>FILTER BY CUSTOMER</Text>
+                  <Text style={styles.filterTitle}>FILTER & SEARCH</Text>
+                  <TextInput
+                    style={[styles.searchInput, { marginHorizontal: 0, marginBottom: 10 }]}
+                    placeholder="Search by customer, order, or ref..."
+                    value={outstandingSearchQuery}
+                    onChangeText={setOutstandingSearchQuery}
+                  />
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -668,7 +677,12 @@ export default function DashboardScreen() {
                     style={styles.tableBodyScroll}
                     keyboardShouldPersistTaps="handled"
                   >
-                    {filteredOutstandingList.map((item: any, idx: number) => {
+                    {filteredOutstandingList.filter((item: any) => {
+                      const lowerQuery = outstandingSearchQuery.toLowerCase();
+                      return (item.Customer_Name && item.Customer_Name.toLowerCase().includes(lowerQuery)) ||
+                             (item.S_Order && item.S_Order.toLowerCase().includes(lowerQuery)) ||
+                             (item.Ref_No && item.Ref_No.toLowerCase().includes(lowerQuery));
+                    }).map((item: any, idx: number) => {
                       const balance =
                         (item.Net_Amount || 0) - (item.Paid_Amount || 0);
                       const isPaid = balance <= 0;
@@ -769,7 +783,12 @@ export default function DashboardScreen() {
                         </TouchableOpacity>
                       );
                     })}
-                    {filteredOutstandingList.length === 0 && (
+                    {filteredOutstandingList.filter((item: any) => {
+                      const lowerQuery = outstandingSearchQuery.toLowerCase();
+                      return (item.Customer_Name && item.Customer_Name.toLowerCase().includes(lowerQuery)) ||
+                             (item.S_Order && item.S_Order.toLowerCase().includes(lowerQuery)) ||
+                             (item.Ref_No && item.Ref_No.toLowerCase().includes(lowerQuery));
+                    }).length === 0 && (
                       <View style={{ padding: 20, alignItems: "center" }}>
                         <Text style={{ color: "#666" }}>No records found.</Text>
                       </View>
@@ -1102,27 +1121,6 @@ export default function DashboardScreen() {
                       {selectedHistoryItem.Customer_Name}
                     </Text>
 
-                    <View style={{ flexDirection: "row", marginBottom: 15 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: "#AAA",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          CUSTOMER NAME
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            color: "#333",
-                            fontWeight: "600",
-                          }}
-                        >
-                          {selectedHistoryItem.Customer_Name || "N/A"}
-                        </Text>
-                      </View>
                       <View style={{ flex: 1 }}>
                         <Text
                           style={{
@@ -1141,6 +1139,26 @@ export default function DashboardScreen() {
                           }}
                         >
                           {selectedHistoryItem.S_Order || selectedHistoryItem.OrderNo || "N/A"}
+                        </Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#AAA",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          TYPE
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            color: "#333",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {selectedHistoryItem.ApprovedType || selectedHistoryItem.Status || "N/A"}
                         </Text>
                       </View>
                     </View>
@@ -1360,6 +1378,7 @@ export default function DashboardScreen() {
                     onPress={() => {
                       setApprovalHubModalVisible(false);
                       setSearchQuery("");
+                      setApprovalHubPage(1);
                     }}
                     style={styles.closeBtn}
                   >
@@ -1378,76 +1397,102 @@ export default function DashboardScreen() {
                       style={styles.searchInput}
                       placeholder="Search history..."
                       value={searchQuery}
-                      onChangeText={setSearchQuery}
+                      onChangeText={(text) => {
+                        setSearchQuery(text);
+                        setApprovalHubPage(1);
+                      }}
                     />
                     <ScrollView style={{ marginTop: 10 }}>
-                      {categoryHistory.filter((item) => {
-                        const searchLower = searchQuery.toLowerCase();
-                        return (item.OrderNo && item.OrderNo.toLowerCase().includes(searchLower)) ||
-                               (item.Product && item.Product.toLowerCase().includes(searchLower));
-                      }).map((item, idx) => {
-                        const isApproved = item.Status === "Approved" || item.Status === "A";
+                      {(() => {
+                        const searchedHistory = categoryHistory.filter((item) => {
+                          const searchLower = searchQuery.toLowerCase();
+                          return (item.OrderNo && item.OrderNo.toLowerCase().includes(searchLower)) ||
+                                 (item.Product && item.Product.toLowerCase().includes(searchLower)) ||
+                                 (item.Customer && item.Customer.toLowerCase().includes(searchLower));
+                        });
+                        const totalPages = Math.ceil(searchedHistory.length / ITEMS_PER_PAGE) || 1;
+                        const paginatedHistory = searchedHistory.slice((approvalHubPage - 1) * ITEMS_PER_PAGE, approvalHubPage * ITEMS_PER_PAGE);
+
+                        if (searchedHistory.length === 0) {
+                          return (
+                            <Text style={{ textAlign: "center", marginTop: 20, color: "#888" }}>
+                              No history found.
+                            </Text>
+                          );
+                        }
+
                         return (
-                          <TouchableOpacity
-                            key={idx}
-                            style={styles.historyItem}
-                            onPress={() => {
-                              setSelectedHistoryItem(item);
-                              setHistoryDetailModalVisible(true);
-                            }}
-                          >
-                            <View style={styles.historyInfo}>
-                              <View
-                                style={[
-                                  styles.historyIcon,
-                                  {
-                                    backgroundColor: isApproved
-                                      ? "#34C759"
-                                      : "#FF3B30",
-                                  },
-                                ]}
-                              >
-                                {isApproved ? (
-                                  <CheckCircle2 size={16} color="white" />
-                                ) : (
-                                  <XCircle size={16} color="white" />
-                                )}
+                          <>
+                            {paginatedHistory.map((item, idx) => {
+                              const isApproved = item.Status === "Approved" || item.Status === "A";
+                              return (
+                                <TouchableOpacity
+                                  key={idx}
+                                  style={styles.historyItem}
+                                  onPress={() => {
+                                    setSelectedHistoryItem(item);
+                                    setHistoryDetailModalVisible(true);
+                                  }}
+                                >
+                                  <View style={styles.historyInfo}>
+                                    <View
+                                      style={[
+                                        styles.historyIcon,
+                                        {
+                                          backgroundColor: isApproved
+                                            ? "#34C759"
+                                            : "#FF3B30",
+                                        },
+                                      ]}
+                                    >
+                                      {isApproved ? (
+                                        <CheckCircle2 size={16} color="white" />
+                                      ) : (
+                                        <XCircle size={16} color="white" />
+                                      )}
+                                    </View>
+                                    <View style={styles.historyTextContainer}>
+                                      <Text style={styles.historyOrderText}>
+                                        {item.OrderNo}
+                                      </Text>
+                                      <Text style={styles.historyCustomerText}>
+                                        {item.Product}
+                                      </Text>
+                                    </View>
+                                  </View>
+                                  <View style={styles.historyValueContainer}>
+                                    <Text style={styles.historyValueText}>
+                                      Rs. {item.Rate?.toLocaleString()}
+                                    </Text>
+                                    <Text style={styles.historyDateText}>
+                                      {new Date(item.Date).toLocaleDateString()}
+                                    </Text>
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                            {totalPages > 1 && (
+                              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 20 }}>
+                                <TouchableOpacity
+                                  disabled={approvalHubPage === 1}
+                                  onPress={() => setApprovalHubPage((p) => Math.max(1, p - 1))}
+                                  style={{ padding: 10, opacity: approvalHubPage === 1 ? 0.5 : 1 }}
+                                >
+                                  <Text style={{ color: "#0b871a", fontWeight: "bold" }}>Previous</Text>
+                                </TouchableOpacity>
+                                <Text style={{ color: "#555" }}>Page {approvalHubPage} of {totalPages}</Text>
+                                <TouchableOpacity
+                                  disabled={approvalHubPage === totalPages}
+                                  onPress={() => setApprovalHubPage((p) => Math.min(totalPages, p + 1))}
+                                  style={{ padding: 10, opacity: approvalHubPage === totalPages ? 0.5 : 1 }}
+                                >
+                                  <Text style={{ color: "#0b871a", fontWeight: "bold" }}>Next</Text>
+                                </TouchableOpacity>
                               </View>
-                              <View style={styles.historyTextContainer}>
-                                <Text style={styles.historyOrderText}>
-                                  {item.OrderNo}
-                                </Text>
-                                <Text style={styles.historyCustomerText}>
-                                  {item.Product}
-                                </Text>
-                              </View>
-                            </View>
-                            <View style={styles.historyValueContainer}>
-                              <Text style={styles.historyValueText}>
-                                Rs. {item.Rate?.toLocaleString()}
-                              </Text>
-                              <Text style={styles.historyDateText}>
-                                {new Date(item.Date).toLocaleDateString()}
-                              </Text>
-                            </View>
-                          </TouchableOpacity>
+                            )}
+                          </>
                         );
-                      })}
-                      {categoryHistory.filter((item) => {
-                        const searchLower = searchQuery.toLowerCase();
-                        return (item.OrderNo && item.OrderNo.toLowerCase().includes(searchLower)) ||
-                               (item.Product && item.Product.toLowerCase().includes(searchLower));
-                      }).length === 0 && (
-                        <Text
-                          style={{
-                            textAlign: "center",
-                            marginTop: 20,
-                            color: "#888",
-                          }}
-                        >
-                          No history found.
-                        </Text>
-                      )}
+                      })()}
                     </ScrollView>
                   </>
                 )}
