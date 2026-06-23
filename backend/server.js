@@ -494,16 +494,16 @@ app.get("/dashboard", authenticateToken, async (req, res) => {
       .query("SELECT COUNT(*) as count FROM Payment_Voucher_Chq");
 
     const ahCounts = await Promise.all([
-      pool.request().query("SELECT COUNT(*) as count FROM Pre_Costing WHERE Status = 'Approved'"),
-      pool.request().query("SELECT COUNT(*) as count FROM Pre_Costing WHERE Status = 'Rejected'"),
-      pool.request().query("SELECT COUNT(*) as count FROM Quatation WHERE Status = 'Approved'"),
-      pool.request().query("SELECT COUNT(*) as count FROM Quatation WHERE Status = 'Rejected'"),
-      pool.request().query("SELECT COUNT(*) as count FROM Supplier_payment_H WHERE Approvel = 'Approved'"),
-      pool.request().query("SELECT COUNT(*) as count FROM Supplier_payment_H WHERE Approvel = 'Rejected'"),
-      pool.request().query("SELECT COUNT(*) as count FROM Outside_Technician_Pay WHERE Status = 'Approved'"),
-      pool.request().query("SELECT COUNT(*) as count FROM Outside_Technician_Pay WHERE Status = 'Rejected'"),
-      pool.request().query("SELECT COUNT(*) as count FROM Payment_Voucher WHERE Status = 'Approved'"),
-      pool.request().query("SELECT COUNT(*) as count FROM Payment_Voucher WHERE Status = 'Rejected'")
+      pool.request().query("SELECT COUNT(*) as count FROM Pre_Costing WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A')"),
+      pool.request().query("SELECT COUNT(*) as count FROM Pre_Costing WHERE LTRIM(RTRIM(Status)) = 'Rejected'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Quatation WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A')"),
+      pool.request().query("SELECT COUNT(*) as count FROM Quatation WHERE LTRIM(RTRIM(Status)) = 'Rejected'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Supplier_payment_H WHERE LTRIM(RTRIM(Approvel)) IN ('Approved', 'A')"),
+      pool.request().query("SELECT COUNT(*) as count FROM Supplier_payment_H WHERE LTRIM(RTRIM(Approvel)) = 'Rejected'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Outside_Technician_Pay WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A')"),
+      pool.request().query("SELECT COUNT(*) as count FROM Outside_Technician_Pay WHERE LTRIM(RTRIM(Status)) = 'Rejected'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Payment_Voucher WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A')"),
+      pool.request().query("SELECT COUNT(*) as count FROM Payment_Voucher WHERE LTRIM(RTRIM(Status)) = 'Rejected'")
     ]);
 
     const approvalHubStats = {
@@ -606,15 +606,15 @@ app.get("/approval-hub/:category", authenticateToken, async (req, res) => {
     let query = "";
 
     if (category === "Costing") {
-      query = "SELECT ID, S_Order as OrderNo, Item_Name as Product, Rate, Status, Tr_Date as Date FROM Pre_Costing WHERE Status IN ('Approved', 'Rejected') ORDER BY Tr_Date DESC";
+      query = "SELECT ID, S_Order as OrderNo, Item_Name as Product, Total as Rate, LTRIM(RTRIM(Status)) as Status, Tr_Date as Date FROM Pre_Costing WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
     } else if (category === "Quotations") {
-      query = "SELECT ID, S_Order as OrderNo, Item_Name as Product, Rate, Status, Tr_Date as Date FROM Quatation WHERE Status IN ('Approved', 'Rejected') ORDER BY Tr_Date DESC";
+      query = "SELECT ID, S_Order as OrderNo, Item_Name as Product, Rate, LTRIM(RTRIM(Status)) as Status, Tr_Date as Date FROM Quatation WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
     } else if (category === "Supplier") {
-      query = "SELECT ID, Pay_No as OrderNo, Supplier_Name as Product, Amount as Rate, Approvel as Status, Tr_Date as Date FROM Supplier_payment_H WHERE Approvel IN ('Approved', 'Rejected') ORDER BY Tr_Date DESC";
+      query = "SELECT ID, Pay_No as OrderNo, Supplier_Name as Product, Amount as Rate, LTRIM(RTRIM(Approvel)) as Status, Tr_Date as Date FROM Supplier_payment_H WHERE LTRIM(RTRIM(Approvel)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
     } else if (category === "Technician") {
-      query = "SELECT ID, S_Order as OrderNo, Technician_Name as Product, Amount as Rate, Status, Tr_Date as Date FROM Outside_Technician_Pay WHERE Status IN ('Approved', 'Rejected') ORDER BY Tr_Date DESC";
+      query = "SELECT ID, S_Order as OrderNo, Technician_Name as Product, Amount as Rate, LTRIM(RTRIM(Status)) as Status, Tr_Date as Date FROM Outside_Technician_Pay WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
     } else if (category === "Voucher") {
-      query = "SELECT ID, Voucher_No as OrderNo, Acc_Name as Product, Amount as Rate, Status, Tr_Date as Date FROM Payment_Voucher WHERE Status IN ('Approved', 'Rejected') ORDER BY Tr_Date DESC";
+      query = "SELECT ID, Voucher_No as OrderNo, Acc_Name as Product, Amount as Rate, LTRIM(RTRIM(Status)) as Status, Tr_Date as Date FROM Payment_Voucher WHERE LTRIM(RTRIM(Status)) IN ('Approved', 'A', 'Rejected') ORDER BY Tr_Date DESC";
     } else {
       return res.status(400).json({ message: "Invalid category" });
     }
