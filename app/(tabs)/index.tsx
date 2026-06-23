@@ -2,6 +2,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import {
   AlertCircle,
+  CheckCircle2,
   ChevronRight,
   ClipboardList,
   Clock,
@@ -12,6 +13,7 @@ import {
   TrendingUp,
   User,
   X,
+  XCircle,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -32,9 +34,13 @@ import { socket, SOCKET_EVENTS } from "../../services/socket";
 import * as SecureStore from "../../utils/storage";
 
 export default function DashboardScreen() {
-  const { dashboardData, loading: badgeLoading, refreshCounts } = useBadges();
+  const {
+    dashboardData,
+    approvalHubStats,
+    loading: badgeLoading,
+    refreshCounts,
+  } = useBadges();
   const [username, setUsername] = useState("");
-  const [historyPage, setHistoryPage] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
   const [customerFilter, setCustomerFilter] = useState("All Customers");
   const [detailModalVisible, setDetailModalVisible] = useState(false);
@@ -42,9 +48,18 @@ export default function DashboardScreen() {
     useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any>(null);
 
+  const [approvalHubModalVisible, setApprovalHubModalVisible] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("");
+  const [categoryHistory, setCategoryHistory] = useState<any[]>([]);
+  const [loadingCategory, setLoadingCategory] = useState(false);
+
+  const [activeOrdersModalVisible, setActiveOrdersModalVisible] =
+    useState(false);
+  const [activeOrders, setActiveOrders] = useState<any[]>([]);
+  const [loadingActiveOrders, setLoadingActiveOrders] = useState(false);
+
   const [selectedOutstanding, setSelectedOutstanding] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const ITEMS_PER_PAGE = 3;
   const router = useRouter();
 
   const data = dashboardData;
@@ -116,6 +131,33 @@ export default function DashboardScreen() {
     loadUser();
   }, []);
 
+  const handleOpenCategory = async (category: string) => {
+    setActiveCategory(category);
+    setApprovalHubModalVisible(true);
+    setLoadingCategory(true);
+    try {
+      const res = await api.get(`/approval-hub/${category}`);
+      setCategoryHistory(res.data);
+    } catch (err) {
+      console.error("Fetch Category History Error", err);
+    } finally {
+      setLoadingCategory(false);
+    }
+  };
+
+  const handleOpenActiveOrders = async () => {
+    setActiveOrdersModalVisible(true);
+    setLoadingActiveOrders(true);
+    try {
+      const res = await api.get("/active-orders");
+      setActiveOrders(res.data);
+    } catch (err) {
+      console.error("Fetch Active Orders Error", err);
+    } finally {
+      setLoadingActiveOrders(false);
+    }
+  };
+
   const handleLogout = async () => {
     const logoutAction = async () => {
       try {
@@ -129,7 +171,9 @@ export default function DashboardScreen() {
     };
 
     if (Platform.OS === "web") {
-      const confirmLogout = window.confirm("Are you sure you want to logout?⚠️🔒");
+      const confirmLogout = window.confirm(
+        "Are you sure you want to logout?⚠️🔒",
+      );
       if (confirmLogout) {
         await logoutAction();
       }
@@ -255,12 +299,15 @@ export default function DashboardScreen() {
           <Text style={styles.mainCardValue}>
             Rs. {summary.TotalValue?.toLocaleString() || "0"}
           </Text>
-          <View style={styles.mainCardFooter}>
+          <TouchableOpacity
+            style={styles.mainCardFooter}
+            onPress={handleOpenActiveOrders}
+          >
             <TrendingUp size={25} color="rgb(255, 255, 255)" />
             <Text style={styles.mainCardSubtext}>
               {summary.TotalOrders} Active Orders
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.row}>
@@ -401,6 +448,76 @@ export default function DashboardScreen() {
             </View>
           </TouchableOpacity>
         </View>
+
+        {/* Approval Hub */}
+        <Text style={styles.sectionTitle}>Approval Hub</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.hubScroll}
+        >
+          {[
+            {
+              id: "Costing",
+              title: "Costing",
+              icon: <HardHat size={24} color="#FFF" />,
+              color: "#FF9500",
+            },
+            {
+              id: "Quotations",
+              title: "Quotations",
+              icon: <ClipboardList size={24} color="#FFF" />,
+              color: "#5856D6",
+            },
+            {
+              id: "Supplier",
+              title: "Supplier Payments",
+              icon: <ShoppingBag size={24} color="#FFF" />,
+              color: "#FF3B30",
+            },
+            {
+              id: "Technician",
+              title: "Outside Tech",
+              icon: <User size={24} color="#FFF" />,
+              color: "#AF52DE",
+            },
+            {
+              id: "Voucher",
+              title: "Payment Vouchers",
+              icon: <CreditCard size={24} color="#FFF" />,
+              color: "#34C759",
+            },
+          ].map((cat) => {
+            const stats = approvalHubStats?.[cat.id] || {
+              Approved: 0,
+              Rejected: 0,
+            };
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={styles.hubCard}
+                onPress={() => handleOpenCategory(cat.id)}
+              >
+                <View
+                  style={[styles.hubIconBg, { backgroundColor: cat.color }]}
+                >
+                  {cat.icon}
+                </View>
+                <Text style={styles.hubCardTitle}>{cat.title}</Text>
+                <View style={styles.hubStatsRow}>
+                  <View style={styles.hubStat}>
+                    <CheckCircle2 size={16} color="#34C759" />
+                    <Text style={styles.hubStatValue}>{stats.Approved}</Text>
+                  </View>
+                  <View style={styles.hubStat}>
+                    <XCircle size={16} color="#FF3B30" />
+                    <Text style={styles.hubStatValue}>{stats.Rejected}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
         {/* Outstanding Summary  */}
         <Text style={styles.sectionTitle}>Outstanding Summary</Text>
@@ -1121,97 +1238,170 @@ export default function DashboardScreen() {
           </Modal>
         )}
 
-        <Text style={styles.sectionTitle}>Approved History</Text>
-        {data?.history && data.history.length > 0 ? (
-          <>
-            {data.history
-              .slice(
-                (historyPage - 1) * ITEMS_PER_PAGE,
-                historyPage * ITEMS_PER_PAGE,
-              )
-              .map((item: any, index: number) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.historyItem}
-                  onPress={() => {
-                    setSelectedHistoryItem(item);
-                    setHistoryDetailModalVisible(true);
-                  }}
-                >
-                  <View style={styles.historyInfo}>
-                    <View
-                      style={[
-                        styles.historyIcon,
-                        {
-                          backgroundColor:
-                            item.ApprovedType === "Costing"
-                              ? "#FF9500"
-                              : "#5856D6",
-                        },
-                      ]}
-                    >
-                      <Clock size={16} color="white" />
-                    </View>
-                    <View style={styles.historyTextContainer}>
-                      <Text style={styles.historyOrderText}>
-                        {item.S_Order} - {item.ApprovedType}
+        {/* Active Orders Modal */}
+        {activeOrdersModalVisible && (
+          <Modal
+            visible={activeOrdersModalVisible}
+            animationType="slide"
+            transparent
+          >
+            <View style={styles.modalOverlay}>
+              <View style={[styles.modalContent, { maxHeight: "80%" }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Active Orders</Text>
+                  <TouchableOpacity
+                    onPress={() => setActiveOrdersModalVisible(false)}
+                    style={styles.closeBtn}
+                  >
+                    <X size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
+                {loadingActiveOrders ? (
+                  <ActivityIndicator
+                    size="large"
+                    color="#0b871a"
+                    style={{ marginTop: 20 }}
+                  />
+                ) : (
+                  <ScrollView style={{ marginTop: 10 }}>
+                    {activeOrders.map((item, idx) => (
+                      <View key={idx} style={styles.historyItem}>
+                        <View style={styles.historyInfo}>
+                          <View
+                            style={[
+                              styles.historyIcon,
+                              { backgroundColor: "#0b871a" },
+                            ]}
+                          >
+                            <TrendingUp size={16} color="white" />
+                          </View>
+                          <View style={styles.historyTextContainer}>
+                            <Text style={styles.historyOrderText}>
+                              {item.S_Order}
+                            </Text>
+                            <Text style={styles.historyCustomerText}>
+                              {item.Customer_Name || item.Product_Name}
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={styles.historyValueContainer}>
+                          <Text style={styles.historyValueText}>
+                            Rs. {item.Rate?.toLocaleString()}
+                          </Text>
+                          <Text style={styles.historyDateText}>
+                            {new Date(item.Tr_Date).toLocaleDateString()}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                    {activeOrders.length === 0 && (
+                      <Text
+                        style={{
+                          textAlign: "center",
+                          marginTop: 20,
+                          color: "#888",
+                        }}
+                      >
+                        No active orders found.
                       </Text>
-                      <Text style={styles.historyCustomerText}>
-                        {item.Customer_Name}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.historyValueContainer}>
-                    <Text style={styles.historyValueText}>
-                      Rs. {item.Rate?.toLocaleString()}
-                    </Text>
-                    <Text style={styles.historyDateText}>
-                      {new Date(item.Tr_Date).toLocaleDateString()}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-
-            <View style={styles.paginationControls}>
-              <Text style={styles.paginationText}>
-                Page {historyPage} of{" "}
-                {Math.ceil(data.history.length / ITEMS_PER_PAGE)}
-              </Text>
-              <View style={styles.paginationButtons}>
-                <TouchableOpacity
-                  disabled={historyPage === 1}
-                  onPress={() => setHistoryPage((p) => p - 1)}
-                  style={[
-                    styles.pageButton,
-                    historyPage === 1 && styles.pageButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.pageButtonText}>Prev</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  disabled={
-                    historyPage >=
-                    Math.ceil(data.history.length / ITEMS_PER_PAGE)
-                  }
-                  onPress={() => setHistoryPage((p) => p + 1)}
-                  style={[
-                    styles.pageButton,
-                    historyPage >=
-                      Math.ceil(data.history.length / ITEMS_PER_PAGE) &&
-                      styles.pageButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.pageButtonText}>Next</Text>
-                </TouchableOpacity>
+                    )}
+                  </ScrollView>
+                )}
               </View>
             </View>
-          </>
-        ) : (
-          <View style={styles.emptyHistory}>
-            <Text style={styles.emptyHistoryText}>
-              No approved history found
-            </Text>
-          </View>
+          </Modal>
+        )}
+
+        {/* Approval Hub Modal */}
+        {approvalHubModalVisible && (
+          <Modal
+            visible={approvalHubModalVisible}
+            animationType="slide"
+            transparent
+          >
+            <View style={styles.modalOverlay}>
+              <View style={[styles.modalContent, { maxHeight: "80%" }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>
+                    {activeCategory} History
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setApprovalHubModalVisible(false)}
+                    style={styles.closeBtn}
+                  >
+                    <X size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
+                {loadingCategory ? (
+                  <ActivityIndicator
+                    size="large"
+                    color="#0b871a"
+                    style={{ marginTop: 20 }}
+                  />
+                ) : (
+                  <ScrollView style={{ marginTop: 10 }}>
+                    {categoryHistory.map((item, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        style={styles.historyItem}
+                        onPress={() => {
+                          setSelectedHistoryItem(item);
+                          setHistoryDetailModalVisible(true);
+                        }}
+                      >
+                        <View style={styles.historyInfo}>
+                          <View
+                            style={[
+                              styles.historyIcon,
+                              {
+                                backgroundColor:
+                                  item.Status === "Approved"
+                                    ? "#34C759"
+                                    : "#FF3B30",
+                              },
+                            ]}
+                          >
+                            {item.Status === "Approved" ? (
+                              <CheckCircle2 size={16} color="white" />
+                            ) : (
+                              <XCircle size={16} color="white" />
+                            )}
+                          </View>
+                          <View style={styles.historyTextContainer}>
+                            <Text style={styles.historyOrderText}>
+                              {item.OrderNo}
+                            </Text>
+                            <Text style={styles.historyCustomerText}>
+                              {item.Product}
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={styles.historyValueContainer}>
+                          <Text style={styles.historyValueText}>
+                            Rs. {item.Rate?.toLocaleString()}
+                          </Text>
+                          <Text style={styles.historyDateText}>
+                            {new Date(item.Date).toLocaleDateString()}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                    {categoryHistory.length === 0 && (
+                      <Text
+                        style={{
+                          textAlign: "center",
+                          marginTop: 20,
+                          color: "#888",
+                        }}
+                      >
+                        No history found.
+                      </Text>
+                    )}
+                  </ScrollView>
+                )}
+              </View>
+            </View>
+          </Modal>
         )}
       </View>
     </ScrollView>
@@ -1827,4 +2017,48 @@ const styles = StyleSheet.create({
   summaryLabelBold: { color: "#666", fontSize: 15, fontWeight: "bold" },
   summaryValueBigRed: { color: "#D32F2F", fontSize: 22, fontWeight: "bold" },
   summaryDivider: { height: 1, backgroundColor: "#EEE", marginVertical: 10 },
+  hubScroll: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  hubCard: {
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 15,
+    marginRight: 15,
+    width: 150,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  hubIconBg: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  hubCardTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
+  },
+  hubStatsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  hubStat: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  hubStatValue: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#555",
+  },
 });

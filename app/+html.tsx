@@ -1,9 +1,7 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
 import type { ReactNode } from 'react';
 
-// This file is web-only and defines the root HTML shell.
-// It ensures that apple-touch-icon links and PWA meta tags are statically embedded 
-// into every server-rendered or exported static web page.
+
 export default function Root({ children }: { children: ReactNode }) {
   return (
     <html lang="en">

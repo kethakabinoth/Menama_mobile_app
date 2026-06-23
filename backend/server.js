@@ -493,6 +493,27 @@ app.get("/dashboard", authenticateToken, async (req, res) => {
       .request()
       .query("SELECT COUNT(*) as count FROM Payment_Voucher_Chq");
 
+    const ahCounts = await Promise.all([
+      pool.request().query("SELECT COUNT(*) as count FROM Pre_Costing WHERE Status = 'Approved'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Pre_Costing WHERE Status = 'Rejected'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Quatation WHERE Status = 'Approved'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Quatation WHERE Status = 'Rejected'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Supplier_payment_H WHERE Approvel = 'Approved'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Supplier_payment_H WHERE Approvel = 'Rejected'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Outside_Technician_Pay WHERE Status = 'Approved'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Outside_Technician_Pay WHERE Status = 'Rejected'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Payment_Voucher WHERE Status = 'Approved'"),
+      pool.request().query("SELECT COUNT(*) as count FROM Payment_Voucher WHERE Status = 'Rejected'")
+    ]);
+
+    const approvalHubStats = {
+      Costing: { Approved: ahCounts[0].recordset[0].count, Rejected: ahCounts[1].recordset[0].count },
+      Quotations: { Approved: ahCounts[2].recordset[0].count, Rejected: ahCounts[3].recordset[0].count },
+      Supplier: { Approved: ahCounts[4].recordset[0].count, Rejected: ahCounts[5].recordset[0].count },
+      Technician: { Approved: ahCounts[6].recordset[0].count, Rejected: ahCounts[7].recordset[0].count },
+      Voucher: { Approved: ahCounts[8].recordset[0].count, Rejected: ahCounts[9].recordset[0].count }
+    };
+
     const summary = {
       TotalOrders: salesStats.recordset[0].TotalOrders || 0,
       ReadyCostings: costingCount.recordset[0].count || 0,
@@ -508,6 +529,7 @@ app.get("/dashboard", authenticateToken, async (req, res) => {
       SupplierPending: supplierPayCount.recordset[0].count || 0,
       TechPending: techPayCount.recordset[0].count || 0,
       VoucherPending: voucherPayCount.recordset[0].count || 0,
+      ApprovalHubStats: approvalHubStats,
     };
 
     const outstandingStats = await pool.request().query(`
@@ -555,6 +577,50 @@ app.get("/dashboard", authenticateToken, async (req, res) => {
       outstandingList: outstandingList.recordset || [],
       history: history.recordset,
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Route: Active Orders
+app.get("/active-orders", authenticateToken, async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const activeOrders = await pool.request().query(`
+            SELECT ID, S_Order, Customer_Name, Product_Name, Rate, Tr_Date
+            FROM New_Sales_Order
+            WHERE LTRIM(RTRIM(Status)) = 'A'
+            ORDER BY Tr_Date DESC
+        `);
+    res.json(activeOrders.recordset);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Route: Approval Hub Category Details
+app.get("/approval-hub/:category", authenticateToken, async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const category = req.params.category;
+    let query = "";
+
+    if (category === "Costing") {
+      query = "SELECT ID, S_Order as OrderNo, Item_Name as Product, Rate, Status, Tr_Date as Date FROM Pre_Costing WHERE Status IN ('Approved', 'Rejected') ORDER BY Tr_Date DESC";
+    } else if (category === "Quotations") {
+      query = "SELECT ID, S_Order as OrderNo, Item_Name as Product, Rate, Status, Tr_Date as Date FROM Quatation WHERE Status IN ('Approved', 'Rejected') ORDER BY Tr_Date DESC";
+    } else if (category === "Supplier") {
+      query = "SELECT ID, Pay_No as OrderNo, Supplier_Name as Product, Amount as Rate, Approvel as Status, Tr_Date as Date FROM Supplier_payment_H WHERE Approvel IN ('Approved', 'Rejected') ORDER BY Tr_Date DESC";
+    } else if (category === "Technician") {
+      query = "SELECT ID, S_Order as OrderNo, Technician_Name as Product, Amount as Rate, Status, Tr_Date as Date FROM Outside_Technician_Pay WHERE Status IN ('Approved', 'Rejected') ORDER BY Tr_Date DESC";
+    } else if (category === "Voucher") {
+      query = "SELECT ID, Voucher_No as OrderNo, Acc_Name as Product, Amount as Rate, Status, Tr_Date as Date FROM Payment_Voucher WHERE Status IN ('Approved', 'Rejected') ORDER BY Tr_Date DESC";
+    } else {
+      return res.status(400).json({ message: "Invalid category" });
+    }
+    
+    const result = await pool.request().query(query);
+    res.json(result.recordset);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

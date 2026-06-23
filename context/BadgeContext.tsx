@@ -15,6 +15,7 @@ interface BadgeCounts {
 interface BadgeContextType {
   counts: BadgeCounts;
   dashboardData: any;
+  approvalHubStats: any;
   loading: boolean;
   refreshCounts: () => Promise<void>;
 }
@@ -23,6 +24,7 @@ const BadgeContext = createContext<BadgeContextType | undefined>(undefined);
 
 export function BadgeProvider({ children }: { children: React.ReactNode }) {
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [approvalHubStats, setApprovalHubStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState<BadgeCounts>({
     quotations: 0,
@@ -42,6 +44,9 @@ export function BadgeProvider({ children }: { children: React.ReactNode }) {
       const data = response.data;
       const summary = data.summary;
       setDashboardData(data);
+      if (summary.ApprovalHubStats) {
+        setApprovalHubStats(summary.ApprovalHubStats);
+      }
       setCounts({
         quotations: summary.ReadyQuotations || 0,
         costings: summary.ReadyCostings || 0,
@@ -70,7 +75,7 @@ export function BadgeProvider({ children }: { children: React.ReactNode }) {
   }, [refreshCounts]);
 
   return (
-    <BadgeContext.Provider value={{ counts, dashboardData, loading, refreshCounts }}>
+    <BadgeContext.Provider value={{ counts, dashboardData, approvalHubStats, loading, refreshCounts }}>
       {children}
     </BadgeContext.Provider>
   );
