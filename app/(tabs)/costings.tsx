@@ -49,10 +49,22 @@ const G = {
   redBorder: "#FFCDD2",
 };
 
+// Safely parse a SQL Server datetime string like "2026-07-14 00:00:00.000"
+// by extracting just the date portion to avoid UTC timezone shift issues
+const parseSqlDate = (dateStr: string | Date): Date => {
+  if (!dateStr) return new Date(NaN);
+  if (dateStr instanceof Date) return dateStr;
+  const match = String(dateStr).match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  return new Date(dateStr);
+};
+
 const getTimeAgo = (date: string | Date) => {
   if (!date) return "";
   const now = new Date();
-  const past = new Date(date);
+  const past = parseSqlDate(date as string);
   const diffInMs = now.getTime() - past.getTime();
   const diffInMins = Math.floor(diffInMs / (1000 * 60));
   const diffInHours = Math.floor(diffInMins / 60);

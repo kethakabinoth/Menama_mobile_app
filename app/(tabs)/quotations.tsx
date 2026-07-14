@@ -49,10 +49,23 @@ const G = {
   redBorder: "#FFCDD2",
 };
 
+// Safely parse a SQL Server datetime string like "2026-07-14 00:00:00.000"
+// by extracting just the date portion to avoid UTC timezone shift issues
+const parseSqlDate = (dateStr: string | Date): Date => {
+  if (!dateStr) return new Date(NaN);
+  if (dateStr instanceof Date) return dateStr;
+  // Extract "YYYY-MM-DD" from strings like "2026-07-14 00:00:00.000" or ISO strings
+  const match = String(dateStr).match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  return new Date(dateStr);
+};
+
 const getTimeAgo = (date: string | Date) => {
   if (!date) return "";
   const now = new Date();
-  const past = new Date(date);
+  const past = parseSqlDate(date as string);
   const diffInMs = now.getTime() - past.getTime();
   const diffInMins = Math.floor(diffInMs / (1000 * 60));
   const diffInHours = Math.floor(diffInMins / 60);
@@ -157,7 +170,8 @@ export default function QuotationsScreen() {
       if (!groups[key]) {
         groups[key] = {
           S_Order: item.S_Order,
-          Customer_Name: item.Customer_Name,
+          Customer_Name: item.Customer_Name || item.Cus_Name || "",
+          Cus_Name: item.Cus_Name,
           Quatation_Status: item.Quatation_Status,
           Tr_Date: item.Tr_Date,
           items: [],
@@ -215,7 +229,8 @@ export default function QuotationsScreen() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
-    const date = new Date(dateString);
+    const date = parseSqlDate(dateString);
+    if (isNaN(date.getTime())) return "";
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, "0");
     const dd = String(date.getDate()).padStart(2, "0");
@@ -512,7 +527,7 @@ export default function QuotationsScreen() {
 
                   <Text style={styles.modalInfoLabel}>CUSTOMER</Text>
                   <Text style={styles.modalInfoValue}>
-                    {selectedOrder?.Customer_Name}
+                    {selectedOrder?.Customer_Name || selectedOrder?.Cus_Name || "N/A"}
                   </Text>
 
                   <View style={styles.modalDivider} />

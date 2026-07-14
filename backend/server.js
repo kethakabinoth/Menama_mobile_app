@@ -119,7 +119,7 @@ app.get("/quotations", authenticateToken, async (req, res) => {
   try {
     const pool = await poolPromise;
     const result = await pool.request().query(`
-            SELECT Q.ID, Q.S_Order, Q.Q_No, Q.Tr_Date, Q.Item_Name, Q.Rate, Q.Status, 
+            SELECT Q.ID, Q.S_Order, Q.Q_No, Q.Tr_Date, Q.Item_Name, Q.Rate, Q.Status, Q.Cus_Name,
                    NS.Customer_Name, NS.Quatation_Status, NS.Costing_Status
             FROM Quatation Q 
             OUTER APPLY (

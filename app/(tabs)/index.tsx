@@ -34,6 +34,23 @@ import api from "../../services/api";
 import { socket, SOCKET_EVENTS } from "../../services/socket";
 import * as SecureStore from "../../utils/storage";
 
+// Safely parse a SQL Server datetime string like "2026-07-14 00:00:00.000"
+// by extracting just the date portion to avoid UTC timezone shift issues
+const parseSqlDate = (dateStr: string | null | undefined): Date => {
+  if (!dateStr) return new Date(NaN);
+  const match = String(dateStr).match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  return new Date(dateStr);
+};
+
+const formatSqlDate = (dateStr: string | null | undefined): string => {
+  const d = parseSqlDate(dateStr);
+  if (isNaN(d.getTime())) return "N/A";
+  return d.toLocaleDateString();
+};
+
 export default function DashboardScreen() {
   const {
     dashboardData,
@@ -728,7 +745,7 @@ export default function DashboardScreen() {
                                 {item.Tr_Type} |{" "}
                               </Text>
                               <Text style={{ fontSize: 9, color: "#888" }}>
-                                {new Date(item.Tr_Date).toLocaleDateString()}
+                                {formatSqlDate(item.Tr_Date)}
                               </Text>
                             </View>
                           </View>
@@ -968,9 +985,7 @@ export default function DashboardScreen() {
                                 fontWeight: "600",
                               }}
                             >
-                              {new Date(
-                                selectedOutstanding.Tr_Date,
-                              ).toLocaleDateString()}
+                              {formatSqlDate(selectedOutstanding.Tr_Date)}
                             </Text>
                           </View>
                         </View>
@@ -1203,7 +1218,7 @@ export default function DashboardScreen() {
                           }}
                         >
                           {selectedHistoryItem.Tr_Date || selectedHistoryItem.Date
-                            ? new Date(selectedHistoryItem.Tr_Date || selectedHistoryItem.Date).toLocaleDateString()
+                            ? formatSqlDate(selectedHistoryItem.Tr_Date || selectedHistoryItem.Date)
                             : "N/A"}
                         </Text>
                       </View>
@@ -1466,7 +1481,7 @@ export default function DashboardScreen() {
                                       Rs. {item.Rate?.toLocaleString()}
                                     </Text>
                                     <Text style={styles.historyDateText}>
-                                      {new Date(item.Date).toLocaleDateString()}
+                                      {formatSqlDate(item.Date)}
                                     </Text>
                                   </View>
                                 </TouchableOpacity>
